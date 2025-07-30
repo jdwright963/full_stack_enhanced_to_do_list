@@ -212,30 +212,14 @@ export default function LoginPage() {
 
     });
 
-    // EDIT!!!
-    // Stop the loading indicator
     setIsLoading(false);
 
     if (res?.error) {
-      // If there was an error, show it in a toast
       toast.error(res.error);
     } else {
-      // If login was successful, show a success toast
       toast.success("Logged in!");
-
-      // EDIT!!!
-      router.refresh();
-
-      // EDIT!!!
       router.push(callbackUrl);
-
-
-      // window.location.assign(res?.url ?? callbackUrl);
-
-      // router.push(res?.url ?? callbackUrl);
-
-    } 
-    // EDIT!!!
+    }
 
 
     // // This `if/else` block checks the result of the login attempt contained in the `res` object.
