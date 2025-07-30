@@ -1,3 +1,7 @@
+  // This `tsconfig.json` file is automatically generated and configured by the `create-t3-app`
+  // scaffolding tool. It serves as the central configuration for the TypeScript compiler (`tsc`).
+  // This file defines all the rules for how your TypeScript code is checked for errors and
+  // transpiled into JavaScript.
 {
   "compilerOptions": {
     /* Base Options: */

@@ -1,3 +1,11 @@
+// This `eslint.config.js` file is automatically generated and configured by the `create-t3-app`
+// scaffolding tool. ESLint is a "linter" — a static analysis tool that automatically checks
+// your code for potential errors, bugs, stylistic issues, and bad practices without
+// actually running the code.
+//
+// This configuration is highly opinionated and pre-tuned for the T3 Stack. It enforces
+// strict rules for TypeScript, React, and accessibility to help you write high-quality,
+// consistent, and maintainable code. It is the "guardian" of your codebase's quality.
 import { FlatCompat } from "@eslint/eslintrc";
 import tseslint from "typescript-eslint";
 

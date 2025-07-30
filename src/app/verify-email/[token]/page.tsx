@@ -1,0 +1,136 @@
+// This file defines a Next.js App Router page that uses a "Dynamic Route Segment".
+//
+// In file-based routing, a regular route is a fixed path, like `/about`. A dynamic route,
+// however, is a flexible path that can match many different URLs. The special folder name `[token]`
+// is a dynamic segment. It acts as a wildcard, telling Next.js that this page should handle any URL
+// that follows the pattern `/verify-email/some-value-here`. The `some-value-here` part can be
+// anything, and it will be captured as a parameter named "token".
+//
+// Because this is a "Server Component" by default, the entire logic inside this file runs
+// exclusively ON THE SERVER when a user visits a matching URL. This is a highly secure and
+// efficient pattern for email verification. The process is:
+// 1. A user clicks a link like `/verify-email/abc123...`.
+// 2. The Next.js server sees that this matches the `[token]` dynamic route and runs this component.
+// 3. The function extracts the dynamic `token` part (`abc123...`) from the URL.
+// 4. It performs a direct database query to validate the token.
+// 5. It updates the user's record in the database upon successful validation.
+// 6. Finally, it sends a redirect command back to the user's browser.
+
+// Imports our globally initialized Prisma Client instance from the server directory (`~/server/db`).
+// This direct database access is only possible because this is a Server Component.
+import { db } from "~/server/db";
+
+// Imports the `redirect` function from the Next.js navigation library. This version of `redirect` is
+// specifically designed for use in Server Components. When called, it stops the current server-side
+// rendering process and immediately sends an HTTP redirect response to the user's browser.
+import { redirect } from "next/navigation";
+
+// This is a TypeScript "interface", which defines a "contract" or "shape" for an object.
+// We are creating an interface named `VerifyEmailPageProps` to describe the `props` object that
+// Next.js will automatically pass to our component because it's handling a dynamic route.
+interface VerifyEmailPageProps {
+
+  // `params`: This key is a special prop that Next.js provides to pages that use dynamic segments.
+  // Its value is an object containing the captured values from 
+  params: {
+
+    // `token: string`: Inside the `params` object, we are defining a property named `token`.
+    //
+    // This is the crucial link. The name of this property, `token`, MUST EXACTLY MATCH the name
+    // used in the dynamic route segment's folder name: `[token]`. This is how Next.js's file-based
+    // routing system knows to take the value from the URL and place it into this specific `token` property.
+    //
+    // The `: string` is a TypeScript type annotation, guaranteeing that the `token` property will be a string.
+    token: string;
+  };
+}
+
+// This defines and exports the main Server Component for this page.
+// `export default`: Makes this the primary export, required by Next.js for page components.
+// `async function VerifyEmailPage(...)`: The `async` keyword is critical. It allows us to use `await`
+// for asynchronous operations like database queries directly inside the component body.
+//
+// The parameter block `({ params }: VerifyEmailPageProps)` does two things:
+// 1. `({ params })`: This is JavaScript object destructuring. The component receives a single `props`
+//    object from Next.js, and this syntax immediately extracts the `params` property from it.
+// 2. `: VerifyEmailPageProps`: This is a TypeScript type annotation. It tells the compiler that the
+//    `props` object must conform to the `VerifyEmailPageProps` interface we defined earlier,
+//    ensuring that `params` and `params.token` exist and are correctly typed.
+export default async function VerifyEmailPage({ params }: VerifyEmailPageProps) {
+
+  // This line uses object destructuring again, this time on the `params` object.
+  // It extracts the `token` property from `params` and assigns it to a new constant named `token`.
+  // This is a convenient shorthand for writing `const token = params.token;`.
+  const { token } = params;
+
+  // This is a "guard clause" that performs a basic check.
+  // `if (!token)`: This condition is true if the `token` extracted from the URL is missing for any reason
+  // (e.g., an empty string, null, or undefined).
+  if (!token) {
+
+    // If the token is missing, we stop execution and return a simple paragraph of JSX.
+    // Next.js will render this HTML and send it to the browser as a simple error page.
+    return <p>Invalid verification link.</p>;
+  }
+
+  // This line performs the database lookup to find a user associated with the provided token.
+  // `await`: Pauses the function's execution until the database query completes.
+  // `db.user.findFirst()`: This Prisma method searches the `User` table for the first record
+  // that matches the specified `where` criteria. It returns the user object or `null`.
+  const user = await db.user.findFirst({ 
+    
+    // The `where` clause specifies the filtering conditions.
+    // It tells Prisma to find a user where the `verificationToken` column's value
+    // is exactly equal to the `token` we extracted from the URL.
+    where: { verificationToken: token } });
+
+  // This is the second and most important guard clause. It handles an invalid or expired token.
+  // `if (!user)`: This condition checks if the `user` variable is `null`, which is what Prisma
+  // returns when no matching record is found in the database.
+  if (!user) {
+
+    // If no user was found, we stop and return a different error message.
+    // This provides more specific feedback to the user than the generic "invalid link" message.
+    return <p>Invalid or expired verification token.</p>;
+  }
+
+  // This line updates the user's record in the database to mark their email as verified.
+  // This is an asynchronous "write" operation.
+  // `await`: Pauses the function's execution until the database update is successfully completed.
+  // `db.user.update()`: This is the Prisma Client method for modifying an existing record in the `User` table.
+  // It takes a single object argument with `where` and `data` properties.
+  await db.user.update({
+
+    // The `where` clause is an object that specifies exactly which user record to update.
+    // To update a record, you must provide a value for a unique field like `id`.
+    // `{ id: user.id }`: This tells Prisma to find the user whose `id` column matches the `id`
+    // of the `user` object we just fetched from the database.
+    where: { id: user.id },
+
+    // The `data` clause is an object that specifies which fields to change and what their new values should be.
+    // Any fields not mentioned here will be left unchanged.
+    data: {
+
+      // `emailVerified: new Date()`: We set the `emailVerified` field in the database to the
+      // current date and time. Storing a timestamp is a common and robust pattern to know
+      // not just if a user verified, but also *when*. This is the key action of this entire page.
+      emailVerified: new Date(),
+
+      // `verificationToken: null`: This is a crucial security step. We set the `verificationToken`
+      // field back to `null` in the database. This effectively "burns" the token, ensuring it can
+      // only be used once. If we didn't do this, the same verification link could be used repeatedly.
+      verificationToken: null,
+    },
+  });
+
+  // This is the final step for a successful verification. Instead of returning JSX to render,
+  // we call the `redirect` function that we imported from `next/navigation`.
+  // `redirect()`: This function, when called in a Server Component, immediately stops the rendering
+  // process and sends an HTTP redirect response to the user's browser.
+  // `"/login?verified=true"`: This is the destination URL.
+  //   - `/login`: We send the user to the login page.
+  //   - `?verified=true`: We are adding a "query parameter" to the URL. This is a clever way to
+  //     pass a small piece of information to the next page. The login page can read this
+  //     parameter and optionally display a "Success! Your email has been verified. Please log in." message.
+  return redirect("/login?verified=true");
+}

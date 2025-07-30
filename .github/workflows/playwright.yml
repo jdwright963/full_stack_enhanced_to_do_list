@@ -1,0 +1,93 @@
+# --- Purpose of this file ---
+# This YAML file defines a GitHub Actions "workflow" specifically for running your
+# frontend End-to-End (E2E) tests using Playwright. It automates the process of setting up
+# an environment, installing dependencies, starting your application, and running the tests.
+
+# Sets the display name for this entire workflow. This is the name you will see
+# in the "Actions" tab of your GitHub repository, making it easy to identify.
+name: Playwright E2E
+
+# The 'on' key is the event trigger section. It specifies which GitHub events
+# will cause this workflow to automatically start running.
+on:
+
+  # This configures the workflow to run on a `git push` event.
+  push:
+
+    # This is a crucial filter. It specifies that the `push` event will ONLY trigger
+    # this workflow if the push is to the `main` branch. Pushes to other feature
+    # branches (e.g., `my-new-feature`) will NOT run this workflow.
+    # This is often used to run tests on the primary branch after a merge.
+    branches: [main]
+
+  # This configures the workflow to run when a pull request event occurs.
+  pull_request:
+
+    # This is another filter. It specifies that the `pull_request` event will ONLY
+    # trigger this workflow if the pull request's TARGET branch is `main`.
+    # This is a very common and important CI (Continuous Integration) practice. It means
+    # "before any code is allowed to merge into `main`, run all the E2E tests on it first".
+    branches: [main]
+
+# The 'jobs' key defines one or more jobs that the workflow will execute.
+# A job is a set of steps that execute on the same runner.
+jobs:
+
+  # This line defines a single job with the unique ID 'e2e'.
+  # This ID is used to refer to the job in other parts of the workflow if needed.
+  e2e:
+
+    # 'runs-on' specifies the type of virtual machine this job will execute on.
+    # `ubuntu-latest` provides a fresh, clean environment running the latest stable
+    # version of Ubuntu Linux for every run, ensuring consistent test results.
+    runs-on: ubuntu-latest
+
+    # 'steps' defines a sequence of tasks that will be executed in order within this job.
+    # If any step fails, the job will stop by default.
+    steps:
+
+      # The hyphen `-` denotes a list item, making this the first step.
+      # `uses: actions/checkout@v3` tells this step to run a pre-built action from the GitHub Marketplace.
+      # This specific action is essential: it checks out your repository's code and downloads it
+      # onto the runner, so your workflow can access all your project files (e.g., package.json, test files).
+      # The `@v3` pins the action to a specific major version for stability.
+      - uses: actions/checkout@v3
+
+      # This is the second step in the job. The `name` provides a human-readable label
+      # that will be displayed in the GitHub Actions UI logs, making it easy to see what's happening.
+      - name: Set up Node.js
+
+        # This step uses another official action, `setup-node`, which installs and configures Node.js on the runner.
+        # This is necessary because your T3 app and Playwright itself are Node.js-based tools.
+        uses: actions/setup-node@v3
+
+        # The 'with' block is used to provide input parameters to the action specified in `uses`.
+        with:
+
+          # This input tells the `setup-node` action to install Node.js version 18.
+          # Specifying a version ensures your tests run in the same environment as your development machine.
+          node-version: 18
+
+      # This is the third and final step of the job. It's a single, multi-line script block
+      # responsible for installing all dependencies and then executing the Playwright tests.
+      - name: Install deps & run Playwright tests
+
+      # The `run` keyword executes all the following lines as shell commands in sequence.
+      # 1. `npm ci`: ("Clean Install") Installs the exact project dependencies from the `package-lock.json`
+      #    file. This is the standard, reproducible way to install packages in a CI environment.
+      # 2. `npx playwright install --with-deps`: Installs the browser binaries (Chromium, etc.) that
+      #    Playwright needs, and the `--with-deps` flag also installs required OS-level dependencies
+      #    for running browsers on a headless Linux server.
+      # 3. `npm run dev &`: Starts the Next.js development server. The `&` at the end is crucial; it runs
+      #    the server in the background so the script can continue to the next command.
+      # 4. `sleep 5`: Pauses the script for 5 seconds. This gives the development server a moment
+      #    to start up and become ready to accept connections before the tests begin.
+      # 5. `npx playwright test`: The final command that executes the Playwright test runner. It will
+      #    run all tests found in the `e2e` directory against the now-running application. If any
+      #    test fails, this command will exit with an error, failing the entire workflow.
+        run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run dev &
+          sleep 5
+          npx playwright test

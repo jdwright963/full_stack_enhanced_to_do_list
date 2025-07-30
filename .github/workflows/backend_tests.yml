@@ -1,0 +1,82 @@
+
+# --- Purpose of this file ---
+# This YAML file defines a GitHub Actions "workflow". A workflow is an automated process that
+# runs one or more "jobs" whenever a specified event occurs in your repository.
+# This specific workflow is designed to automatically run your backend tests.
+
+# The 'name' key sets the display name for this entire workflow.
+# This is the name you will see in the "Actions" tab of your GitHub repository,
+# making it easy to identify among other potential workflows (e.g., "Deploy to Production").
+name: Backend Tests
+
+# The 'on' key specifies the events that will trigger this workflow to run.
+# `[push, pull_request]` means this workflow will automatically execute whenever:
+#  1. Code is pushed to any branch in the repository.
+#  2. A pull request is created or updated.
+# This is a standard CI practice to ensure code quality is checked on every change.
+on: [push, pull_request]
+
+# The 'jobs' key defines one or more jobs that the workflow will execute.
+# Jobs can run in parallel by default or be configured to run sequentially.
+jobs:
+
+  # This line defines a single job with the unique ID 'test'.
+  # It's the main container for the steps that will run our backend tests.
+  test:
+
+    # The 'runs-on' key specifies the type of virtual machine, or "runner", this job will run on.
+    # `ubuntu-latest` tells GitHub to provide a fresh virtual environment running the latest
+    # stable version of Ubuntu Linux for this job.
+    runs-on: ubuntu-latest
+
+    # The 'steps' key defines a sequence of tasks that will be executed in order within the 'test' job.
+    # If any step fails, the job will stop by default.
+    steps:
+
+      # The hyphen `-` indicates a list item, making this the first step.
+      # The `uses` keyword tells this step to run a pre-built, reusable community action.
+      # `actions/checkout@v3` is a critical official action that checks out your repository's code
+      # and downloads it onto the runner, so your workflow can access your files (like your test scripts).
+      # The `@v3` pins it to a specific major version for stability and security.
+      - uses: actions/checkout@v3
+
+      # This is the second step in the job, clearly labeled 'Set up Python'.
+      - name: Set up Python
+
+        # It uses the official `setup-python` action to install a specific Python version onto the runner.
+        uses: actions/setup-python@v4
+
+        # The 'with' block provides input parameters to the action being used.
+        with:
+
+          # This input tells the action to install and make Python version 3.11 available in the environment.
+          # This ensures that your tests always run against the same version of Python for consistency.
+          python-version: 3.11
+
+      # This is the third step, responsible for installing the necessary Python packages.
+      - name: Install dependencies
+
+        # The 'run' keyword executes shell commands directly on the runner.
+        # The '|' signifies a multi-line script, where each line is a separate command.
+        # The first command creates a Python virtual environment named 'venv'.
+        # It's a best practice to isolate project dependencies from the system's global packages.
+        # The second command activates the virtual environment we just created.
+        # Any subsequent `pip` or `python` commands will now use the environment inside the 'venv' folder.
+        # The third command uses pip (Python's package installer) to install all libraries listed in the `requirements.txt` file.
+        # This file should contain `pytest` and `requests` for your tests to work.
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          
+      # This is the fourth and final step: executing the actual tests.
+      - name: Run backend tests
+
+        # This step also runs a multi-line shell script.
+        # We re-activate the virtual environment to ensure we're using the correct `pytest` executable we just installed.
+        # This command runs the `pytest` test runner.
+        # `qa-backend-tests/` tells pytest to look inside this directory for any test files (like `test_api.py`) and run them.
+        # If any test fails, pytest will exit with a non-zero status code, which causes this step and the entire job to fail.
+        run: |
+          source venv/bin/activate
+          pytest tests_api/

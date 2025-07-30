@@ -1,0 +1,57 @@
+# This file, `Dockerfile.playwright`, is a set of instructions for building a Docker image.
+# It is NOT created by the default T3 scaffolding; it's a custom file added specifically
+# to create a self-contained, consistent environment for running Playwright E2E tests.
+#
+# A Docker image is like a lightweight, portable virtual machine. The main benefit is that
+# this testing environment will be identical on a developer's local machine and on a remote
+# CI/CD server (like GitHub Actions), eliminating "it works on my machine" problems.
+
+# This is the first and most important instruction. It specifies the "base image" to build from.
+# `mcr.microsoft.com/playwright:v1.44.1-jammy`: We are using an official base image provided by the Playwright team.
+# This image is incredibly useful because it comes pre-installed with all the complex operating system
+# dependencies and browser binaries that Playwright needs to run on Linux, saving us a huge amount of setup.
+# The `:v1.44.1-jammy` tag pins it to a specific Playwright version and Ubuntu "Jammy" version for reproducibility.
+FROM mcr.microsoft.com/playwright:v1.44.1-jammy
+
+# The `WORKDIR` instruction sets the working directory for all subsequent commands (`COPY`, `RUN`, `CMD`) inside the container.
+# Here, we are setting it to `/app`. This means all future actions will happen relative to this directory inside the container.
+WORKDIR /app
+
+# The `COPY` instruction copies files from your local machine's "build context" into the Docker image.
+# The "build context" is the set of files located at the path where the `docker build` command is ran (usually the project root).
+#
+# `COPY . .`: This is a specific instruction that means:
+# - The first `.`: "Take all files from the root of the build context."
+# - The second `.`: "And copy them into the current working directory inside the image," which is `/app` because of the `WORKDIR` command above.
+# This is the step that gets all the project source code into the Docker image.
+COPY . .
+
+# The `RUN` instruction executes a command during the "build" phase of the Docker image, used for setup.
+# `npm ci`: This "Clean Install" command installs the exact project dependencies specified
+# in the `package-lock.json` file. This happens only once when the image is built.
+RUN npm ci
+
+# The `CMD` instruction specifies the default command to run when a container is started from this image.
+# It is written in "exec form" (`["executable", "param1", "param2"]`), which is the recommended practice.
+#
+# A shell (like `bash` or `/bin/sh`) is a command-line interpreter. It's a program whose job
+# is to read a line of text, interpret special characters (like `$VAR` for variables or `&&` for
+# chaining commands), and then execute the command(s). This is what you normally use in your terminal.
+#
+# Running a command directly means asking the operating system's kernel to run an executable program directly, without
+# the interpretation step of a shell. You provide the program and its arguments as separate, literal strings.
+#
+# 1. Shell Form (e.g., `CMD npx playwright test`):
+#    - How it works: Docker starts a shell (`/bin/sh -c`) and passes the entire command string to it.
+#      The shell interprets the string and then runs the commands.
+#    - The Problems: This introduces an extra, unnecessary layer. The shell can misinterpret special
+#      characters, and it often fails to pass system signals (like "shutdown") to the actual application,
+#      which can cause the container to shut down uncleanly.
+#
+# 2. Exec Form (e.g., `CMD ["npx", "playwright", "test"]`):
+#    - How it works: This format bypasses the shell entirely. Docker runs the executable (`npx`) directly
+#      and passes the other items in the array as its arguments.
+#    - The Advantages: It is more predictable, as there is no shell to misinterpret anything. It is also
+#      more stable because your application becomes the main process in the container, allowing it to
+#      receive shutdown signals directly from Docker and exit gracefully. This is the best practice.
+CMD ["npx", "playwright", "test"]

@@ -1,3 +1,13 @@
+# This `.gitignore` file tells the Git version control system which files and folders
+# it should intentionally ignore and NOT track. Any file or path listed here will
+# not be included when a commit is made to a repository.
+#
+# This is crucial for keeping the repository clean and secure. It prevents large,
+# auto-generated folders (like `node_modules`), temporary build artifacts (like `.next/`),
+# and sensitive files containing secret keys (like `.env`) from being accidentally
+# committed and shared. The entries in this file were pre-configured by `create-t3-app`
+# with sensible defaults for a modern web application.
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

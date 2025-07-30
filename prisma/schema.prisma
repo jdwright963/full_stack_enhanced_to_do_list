@@ -1,18 +1,36 @@
-// This is your Prisma schema file,
+// This is the Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// This block configures the "generator" for Prisma. A generator takes your
+// schema as input and produces an output. The 'prisma-client-js' provider
+// is the most important one: it reads all your models (User, Post, etc.) and
+// generates the fully type-safe Prisma Client library into your `node_modules`
+// folder. This is the client you import and use in your application code to
+// talk to the database.
 
 generator client {
     provider = "prisma-client-js"
 }
 
+// 'provider' tells Prisma which database driver to use (e.g., "postgresql", "mysql", "sqlite").
+// 'url' specifies the connection string. Using an environment variable env("DATABASE_URL")
+// is a security best practice, as it keeps sensitive credentials
+// out of the source code. This allows you to use different databases for development,
+// testing, and production.
+
 datasource db {
     provider = "postgresql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
     url      = env("DATABASE_URL")
 }
+
+// This is a standard application-specific model that defines the shape of a 'Post'.
+// Prisma will map this model to a "Post" table in your database.
+// - @id and @default(autoincrement()): Marks 'id' as the primary key, with values that automatically increase.
+// - @default(now()): Sets the 'createdAt' timestamp to the current time when a new post is created.
+// - @updatedAt: Automatically updates the 'updatedAt' timestamp whenever a post record is changed.
+// - @relation(...): Defines a one-to-many relationship. It links this Post to a User,
+//   specifying that 'createdById' is the foreign key that references the 'id' on the User model.
+// - @@index([name]): Creates a database index on the 'name' column to speed up queries that filter or sort by post name.
 
 model Post {
     id        Int      @id @default(autoincrement())
@@ -26,7 +44,21 @@ model Post {
     @@index([name])
 }
 
-// Necessary for Next auth
+// This model is essential for integrating NextAuth.js for authentication.
+// It is not a model you typically create or query directly. NextAuth's Prisma adapter
+// uses it automatically to manage user sessions and link accounts from different
+// OAuth providers (e.g., Google, GitHub, Discord) to a single User in your app.
+// - @relation(onDelete: Cascade): This is a crucial rule. It means if a User is
+//   deleted, all of their linked Account records will be automatically deleted too,
+//   maintaining data integrity.
+// - @relation(fields: [userId], references: [id]): Defines a one-to-many relationship. It links this Account to a User,
+//   specifying that 'userId' is the foreign key that references the 'id' on the User model.
+// - @@unique([provider, providerAccountId]): This constraint ensures a user can only link
+//   one account from a specific provider. For example, you can't link the same Google
+//   account to your User profile twice.
+
+// '?' following a datatype means it is optional or nullable.
+
 model Account {
     id                       String  @id @default(cuid())
     userId                   String
@@ -46,6 +78,15 @@ model Account {
     @@unique([provider, providerAccountId])
 }
 
+// This model is another requirement for NextAuth.js. It's used to store
+// session data, linking a `sessionToken` (usually stored in a browser cookie)
+// back to a specific user in your database. NextAuth manages the creation,
+// validation, and expiration of these sessions automatically.
+// - @unique: Ensures that every session token is unique.
+// - @relation(..., onDelete: Cascade): A critical setting for data integrity. If a User
+//   record is deleted, all of their associated Session records will be
+//   automatically deleted from the database as well.
+
 model Session {
     id           String   @id @default(cuid())
     sessionToken String   @unique
@@ -54,17 +95,34 @@ model Session {
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// This is the central User model for your application. It holds profile
+// information for each user.
+// - The fields with a `?` (name, email, emailVerified, image) are optional,
+//   as not all auth providers return this data, or a user may not have set it.
+// - email @unique: Guarantees no two users can have the same email address.
+// - accounts[], sessions[], posts[]: These are "back-relations". They do NOT
+//   create columns in the 'User' table. Instead, they are type-safe shortcuts
+//   for the Prisma Client, allowing you to easily query related data. For example:
+//   `prisma.user.findUnique({ where: { id: "..." }, include: { posts: true } })`.
 model User {
     id            String    @id @default(cuid())
     name          String?
     email         String?   @unique
     emailVerified DateTime?
+    password      String
+    verificationToken String? @unique
     image         String?
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
 }
 
+// This model is used by NextAuth for "magic link" email sign-in. When a user
+// requests a sign-in link, NextAuth generates a secure, one-time-use token,
+// stores it in this table with an expiration date, and emails it to the user.
+// When the user clicks the link, NextAuth verifies the token against this table.
+// - @@unique([identifier, token]): A compound unique key ensures the combination
+//   of an identifier (the user's email) and the token is unique.
 model VerificationToken {
     identifier String
     token      String   @unique
@@ -72,3 +130,17 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+// This is model is used to store tasks for the todo list.
+// - @id @default(cuid()): Uses CUIDs for unique, non-sequential primary keys. This is
+//   generally preferred over auto-incrementing integers for security and scalability.
+// - completed @default(false): A new task will be marked as not completed by default.
+// - createdAt @default(now()) & updatedAt @updatedAt: Standard timestamp fields
+//   that automatically track when a record is created and last modified.
+ model Task {
+     id        String   @id @default(cuid())
+     title     String
+     completed Boolean  @default(false)
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+   }
