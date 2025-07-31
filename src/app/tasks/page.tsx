@@ -1,7 +1,9 @@
+// This file is a Server Component. Interactive components are rendered as Client Components.
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { CreateTask } from "~/components/CreateTask"; // Corrected import path
 import { TaskList } from "~/components/TaskList";   // Corrected import path
+import LogoutButton from "~/components/LogoutButton";
 // ...existing code...
 
 // This is now an async Server Component. It runs entirely on the server.
@@ -26,8 +28,10 @@ export default async function TasksPage() {
       <h1 className="text-2xl font-bold mb-4">
         Tasks for <span className="text-purple-400">{session.user.name ?? session.user.email}</span>
       </h1>
-      
-      {/* We render the interactive parts, which are their own Client Components */}
+      {/* Render LogoutButton as a Client Component, just like CreateTask and TaskList */}
+      <div className="mb-4 flex justify-end">
+        <LogoutButton />
+      </div>
       <CreateTask />
       <TaskList />
       {/* ...existing tasks UI... */}
