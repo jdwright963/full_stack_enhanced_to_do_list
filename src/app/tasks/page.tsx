@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import { CreateTask } from "~/components/CreateTask"; // Corrected import path
 import { TaskList } from "~/components/TaskList";   // Corrected import path
+// ...existing code...
 
 // This is now an async Server Component. It runs entirely on the server.
 export default async function TasksPage() {
@@ -29,6 +30,7 @@ export default async function TasksPage() {
       {/* We render the interactive parts, which are their own Client Components */}
       <CreateTask />
       <TaskList />
+      {/* ...existing tasks UI... */}
     </main>
   );
 }

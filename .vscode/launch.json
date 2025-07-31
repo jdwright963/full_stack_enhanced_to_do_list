@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // Configuration to attach to the Back-End (Next.js Server)
+    {
+      "name": "Attach to Server",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "skipFiles": ["<node_internals>/**"],
+      "restart": true
+    },
+    // Configuration to launch Chrome for the Front-End (React)
+    {
+      "name": "Launch Client in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    }
+  ],
+  // This combines the two configurations above into one command!
+  "compounds": [
+    {
+      "name": "Full Stack T3 Debug",
+      "configurations": ["Attach to Server", "Launch Client in Chrome"]
+    }
+  ]
+}

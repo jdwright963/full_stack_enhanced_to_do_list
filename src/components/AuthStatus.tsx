@@ -107,10 +107,7 @@ export function AuthStatus() {
         // `onClick={() => signIn()}`: This event handler works just like the sign-out button.
         // When clicked, the anonymous arrow function calls the `signIn` function imported from `next-auth/react`.
         // This will redirect the user to the login page.
-        // <button onClick={() => signIn()}>Sign In</button>
-
-        // EDIT!!!
-        <Link href="/login?callbackUrl=/tasks">Sign In</Link>
+        <button onClick={() => signIn()}>Sign In</button>
       )}
     </div>
   );

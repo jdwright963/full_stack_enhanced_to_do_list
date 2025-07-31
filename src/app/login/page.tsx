@@ -216,15 +216,47 @@ export default function LoginPage() {
     // Stop the loading indicator
     setIsLoading(false);
 
+    // debug
+    console.log("Login response:", res);
+
+
     if (res?.error) {
       // If there was an error, show it in a toast
       toast.error(res.error);
     } else {
+
+      // After successful login
+      console.log("Checking session token:");
+      const cookies = document.cookie.split(';');
+      const sessionToken = cookies.find(cookie => 
+        cookie.trim().startsWith('next-auth.session-token='));
+      console.log("Session token:", sessionToken);
+
+
+      // Add detailed session debugging here
+      console.log("Pre-refresh session check:");
+      await fetch('/api/auth/session')
+        .then(r => r.json())
+        .then(session => {
+          console.log('Session data:', session);
+          console.log('Cookies:', document.cookie);
+        });
+
+
       // If login was successful, show a success toast
       toast.success("Logged in!");
 
       // EDIT!!!
       router.refresh();
+
+      // Check session after refresh
+      console.log("Post-refresh session check:");
+      await fetch('/api/auth/session')
+        .then(r => r.json())
+        .then(session => {
+          console.log('Session data after refresh:', session);
+          console.log('Cookies after refresh:', document.cookie);
+        });
 
       // EDIT!!!
       router.push(callbackUrl);

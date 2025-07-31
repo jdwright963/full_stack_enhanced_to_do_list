@@ -224,40 +224,21 @@ export const authConfig = {
   adapter: PrismaAdapter(db),
 
   session: {
-    strategy: "database", // Explicitly tell NextAuth to use the database strategy.
+    strategy: "jwt", // Explicitly tell NextAuth to use the database strategy.
+        maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
   // The 'callbacks' object allows us to customize the behavior of the authentication flow at specific points.
   // We can hook into events like sign-in, session creation, and JWT generation.
   callbacks: {
 
-     jwt({ token, user }) {
+    
+     async jwt({ token, user }) {
+      console.log("JWT callback", { token, user });
       if (user) {
         token.id = user.id;
       }
       return token;
-    },
-
-     async signIn({ user, account }) {
-      // Allow OAuth providers (like Discord) to sign in without any extra checks.
-      if (account?.provider !== "credentials") {
-        return true;
-      }
-
-      // For a credentials sign-in, we must ensure the user's email is verified.
-      // We look up the user in the database again to get the most up-to-date information.
-      const existingUser = await db.user.findUnique({
-        where: { id: user.id },
-      });
-
-      // If the user's email is not verified, return `false` to prevent the sign-in.
-      if (!existingUser?.emailVerified) {
-        return false;
-      }
-
-      // If all checks pass, return `true` to allow the sign-in to proceed.
-      // This is the step that ensures the session is properly created for credentials users.
-      return true;
     },
 
     // The `session` callback is triggered whenever a user's session is checked.
@@ -265,22 +246,12 @@ export const authConfig = {
     // It receives the default `session` and the `user` object from the database.
     session: ({ session, token }) => ({
 
-      // We start by returning a new object, copying all the properties from the original session.
+      // Return a new session object, spreading the original session and user properties, and adding the user id from the token.
       ...session,
-
-      // We then override the `user` property within the session.
       user: {
-
-        // We copy all the original properties from the session's user object (like name, email, image).
         ...session.user,
-
-        // And here, we add our custom property: the user's `id` from the database `user` object.
-        // This is what makes the user's ID available on the client-side `useSession` hook,
-        // thanks to the Module Augmentation we did at the top of the file.
         id: token.id as string,
       },
-
-    // This closes the new session object being returned.
     }),
 
   // This curly brace closes the `callbacks` object.
