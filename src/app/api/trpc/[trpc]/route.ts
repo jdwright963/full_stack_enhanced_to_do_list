@@ -5,8 +5,6 @@
 // - `/api/trpc/task.getAll`
 // - `/api/trpc/post.create`
 //
-// This file acts as the essential bridge between the standard HTTP protocol (used by the
-// client's browser) and the internal, type-safe world of your tRPC routers and procedures.
 // It receives incoming HTTP requests, provides them with the necessary "context" (like
 // request headers), and then passes them to the tRPC router for processing.
 
@@ -54,45 +52,41 @@ import { createTRPCContext } from "~/server/api/trpc";
  * @param req The incoming HTTP request from the client.
  * @returns The tRPC context object.
  */
-// We define an `async` function named `createContext` that will be called for each incoming API request.
+
+// This function extracts the headers from the incoming `NextRequest` object and passes
+// them to the `createTRPCContext` function.
 const createContext = async (req: NextRequest) => {
 
-    // This line calls the main `createTRPCContext` helper function (which we imported from `~/server/api/trpc`)
-  // and immediately returns its result. This demonstrates a key architectural pattern:
-  //
-  // There are two separate create context functions because:
-  //
-  // 1. `createTRPCContext` (in `trpc.ts`): This is the **core, inner context creator**.
-  //    Its job is to assemble the parts of the context that are the same regardless of where the
-  //    request comes from (e.g., it always initializes the database connection `db`). It is also
-  //    responsible for using the `headers` to find the user's session.
-  //
-  // 2. `createContext` (this function, here in `route.ts`): This is the **HTTP-specific wrapper**.
-  //    Its only job is to handle a raw HTTP request, extract the necessary pieces (like the `headers`),
-  //    and pass them in the correct format to the core `createTRPCContext` function.
-  //
-  // This separation allows the core context logic to be reused. For example, the server-side
-  // tRPC caller in `~/trpc/server.ts` can also call `createTRPCContext` directly, but it provides
-  // a different set of headers.
-  return createTRPCContext({
-
-    // Here, we are fulfilling the contract required by `createTRPCContext`. We pass an object
-    // containing the `headers` from the incoming HTTP request (`req`). This is essential, as
-    // the core context creator needs these headers to find the user's session cookie and
-    // determine if they are authenticated.
-    headers: req.headers,
+  // This line calls our main, reusable context creator (`createTRPCContext`) and passes it
+  // the specific data it needs, formatted in the way it expects.
+  // We extract the `headers` property from the incoming `req` object and provide it
+  // inside a new `{ headers: ... }` object to satisfy the contract of this inner function.
+  // The `createTRPCContext` function is responsible for assembling the object that all of our API
+  // procedures will receive as `ctx`. This object contains crucial server-side resources like the
+  // database connection (`db`) and the user's `session`.
+  return createTRPCContext({ 
+    headers: req.headers, 
   });
 };
 
 // This line defines a constant named `handler`. The value assigned to it is an arrow function.
 // This `handler` function will be the primary function responsible for processing all incoming tRPC requests.
 // `(req: NextRequest)`: The handler function is defined to accept one argument, `req`, which is the
-// incoming `NextRequest` object from the Next.js server.
+// incoming `NextRequest` object passed from the Next.js server (originally sent by the client).
 const handler = (req: NextRequest) =>
 
-  // The arrow function immediately returns the result of calling `fetchRequestHandler`.
-  // This `fetchRequestHandler` is the core utility imported from tRPC that orchestrates the entire API call.
-  // It takes a single, large configuration object with all the necessary pieces to process the request.
+  // This is the body of the `handler` arrow function. It immediately returns the result of calling `fetchRequestHandler`.
+  // In JavaScript, arrow functions (`=>`) have a special shorthand. When the `=>` is not followed
+  // by a curly brace `{`, the single expression that comes after it is automatically and
+  // implicitly returned. The `return` keyword is not needed.
+  // `fetchRequestHandler` is the core tRPC engine. We are calling it and passing a single,
+  // large configuration object. This function performs the entire tRPC request lifecycle:
+  //
+  // 1. It parses the incoming HTTP request to determine which procedure to run.
+  // 2. It calls our `createContext` function to build the context for the request.
+  // 3. It validates the request's input against the procedure's Zod schema.
+  // 4. It executes the procedure's resolver function.
+  // 5. It serializes the return value (or any errors) and sends back a proper HTTP response.
   fetchRequestHandler({
 
     // `endpoint`: This property tells the tRPC handler what the base path for the tRPC API is.
@@ -120,12 +114,12 @@ const handler = (req: NextRequest) =>
     // an unexpected error occurs during the processing of a procedure. This is used for logging and debugging.
     onError:
 
-          // This is a "ternary operator" (`condition ? value_if_true : value_if_false`).
+      // This is a "ternary operator" (`condition ? value_if_true : value_if_false`).
       // It's used here to make the error logging behavior conditional based on the environment.
       //
       // The Condition: `env.NODE_ENV === "development"`
       //
-      //   `NODE_ENV` is the single most important and universally recognized environment variable in the
+      //   `NODE_ENV` is an important environment variable in the
       //   Node.js ecosystem. It's a string that tells your application in what "mode" it is currently
       //   running. By convention, it has two primary values:
       //   - `"development"`: When you are running the app on your local machine for development (e.g., via `npm run dev`).
@@ -135,7 +129,7 @@ const handler = (req: NextRequest) =>
       //   and change their behavior accordingly. For example, in "development" mode, they provide
       //   detailed error messages, enable hot-reloading, and skip optimizations. In "production" mode,
       //   they provide generic error messages, disable developer features, and enable all performance
-      //   optimizations (like code minification).
+      //   optimizations.
       // 
       //   Next.js automatically sets `process.env.NODE_ENV` for you. It's set to `"development"` when you run
       //   `next dev`, and to `"production"` when you run `next build` and `next start`.
@@ -155,7 +149,7 @@ const handler = (req: NextRequest) =>
         // We use object destructuring `{ path, error }` to immediately extract these properties into local variables.
         ? ({ path, error }) => {
 
-            // `console.error()`: We log the error to the server's console using `console.error` for better visibility and formatting in most terminals.
+            // `console.error()`: We log the error to the server's console using `console.error`.
             console.error(
 
               // 1. `[ERROR]`: This is a "log level prefix". It's a best practice in logging to
@@ -213,7 +207,7 @@ const handler = (req: NextRequest) =>
 //
 // - `,`: The comma separates the multiple named exports.
 //
-// - `handler as POST`: This does the exact same thing again. It takes the *very same* `handler` function
+// - `handler as POST`: This does the exact same thing again. It takes the very same `handler` function
 //   and exports it a second time, but this time under the alias `POST`. Now, Next.js will also use this
 //   handler for incoming POST requests.
 //

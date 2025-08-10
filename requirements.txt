@@ -1,11 +1,5 @@
-# This file lists the Python package dependencies required exclusively for running
-# the backend API tests (using pytest). It is not used by the main Next.js/T3 application,
-# which manages its dependencies in `package.json`.
-#
-# It is used by the `pip` package manager with the command `pip install -r requirements.txt`
-# to set up the Python testing environment.
-#
-# - pytest: The testing framework used to write and run the tests.
-# - requests: A simple HTTP library used to send requests to the application's API endpoints.
-pytest
-requests
+# EDIT!!! are we missing dependencies?
+
+# This requirements.txt file specifies dependencies for the Python test suite,
+# and is not related to the Next.js application's dependencies.
+urllib3==2.5.0

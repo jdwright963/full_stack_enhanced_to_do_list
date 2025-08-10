@@ -11,10 +11,10 @@
 //   (and a new database connection) every single time we saved a file. This would quickly
 //   exhaust the database's connection limit and crash the application.
 //
-// - The code in this file implements a special pattern. It checks if a
+// - The code in this file implements a singleton pattern. It checks if a
 //   Prisma Client instance already exists on the "global" object. If it does, it reuses
 //   the existing one. If it doesn't, it creates a new one. This ensures that, no matter
-//   how many times the code is hot-reloaded, there is only ever **one single Prisma Client**
+//   how many times the code is hot-reloaded, there is only ever one single Prisma Client
 //   and one connection to the database.
 
 // This line imports the main `PrismaClient` class from the `@prisma/client` package.
@@ -110,7 +110,7 @@ const createPrismaClient = () =>
 //     - `typeof`: This is a TypeScript operator that gets the "type" of a value. `typeof createPrismaClient`
 //       doesn't return `"function"`; it returns the full function signature, including its parameters and what it returns.
 //     - `ReturnType<...>`: This is a TypeScript "utility type". It takes a function's type as its input and
-//       extracts *only the type of the value that the function returns*.
+//       extracts only the type of the value that the function returns.
 //     - In short, `ReturnType<typeof createPrismaClient>` is a very robust way of saying "the exact type of a
 //       fully configured Prisma Client instance," without having to manually type it out.
 //
@@ -143,9 +143,10 @@ const globalForPrisma = globalThis as unknown as {
 //    The `??` operator sees this, ignores the left side, and executes the right side: `createPrismaClient()`.
 //    A brand new Prisma Client instance is created and assigned to `db`.
 //
-// 2. After a hot reload: The code in the `if` block below has already run once and stored the client
-//    on the global object. Now, `globalForPrisma.prisma` HAS a value (it's the existing client instance).
-//    The `??` operator sees that the left side is not nullish, so it returns that existing instance.
+// 2. After a hot reload: The module's code re-runs. However, because the `if` block at the end of this
+//    file ran during the previous execution, `globalForPrisma.prisma` was already set.
+//    Now, `globalForPrisma.prisma` HAS a value (it's the existing client instance). The `??` operator
+//    sees that the left side is not nullish, so it simply returns that existing instance.
 //    `createPrismaClient()` is NOT called again.
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 

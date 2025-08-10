@@ -7,15 +7,13 @@
 // - `/api/auth/signout`        (To log the user out)
 // - `/api/auth/session`        (For the client to get the current session state)
 // - `/api/auth/callback/[provider]` (The URL providers like Discord redirect back to)
-//
-// This file acts as a simple but crucial bridge, connecting the Next.js routing system
-// to the internal request handling logic of the NextAuth.js library.
 
 // This line imports the `handlers` object from our central server-side authentication
 // configuration file (`~/server/auth/index.ts`).
-//
-// When we call `NextAuth(authConfig)` in our auth setup, the `NextAuth` function returns
-// an object that contains several properties. One of these properties is `handlers`.
+// 
+// Importing a directory (e.g. "~/server/auth") automatically resolves to the "index" file (e.g. "~/server/auth/index.ts") 
+// because of a Node.js/TypeScript convention where the "index" file is considered the main entry point of a module.
+// 
 // The `handlers` object itself contains pre-built functions for handling HTTP requests,
 // specifically a `GET` function and a `POST` function. These functions contain all the
 // complex internal logic of NextAuth.js to process different authentication actions.

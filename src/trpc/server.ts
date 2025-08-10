@@ -1,7 +1,23 @@
 // This file is the server-side entry point and configuration for using tRPC within
-// React Server Components (RSCs). It is NOT created by default in older T3 apps
-// but is a core part of the modern T3 architecture for the Next.js App Router.
+// React Server Components (RSCs).
+
 // This entire file should ONLY ever be imported into Server Components.
+
+// --- KEY CONCEPTS ---
+//
+// 1. tRPC SERVER CALLER:
+//    This allows our Server Components to execute tRPC procedures directly on the
+//    server, as if they were just local async functions (e.g., `await api.post.getAll()`).
+//
+// 2. SERVER-SIDE QUERY CACHE (via React Query):
+//    A temporary, per-request cache is created on the server. When the tRPC caller
+//    fetches data, the result is stored in this server-side cache.
+//
+// 3. HYDRATION:
+//    "Hydration" is the process of taking the state (the data) from the server-side
+//    cache and sending it to the client. The client then uses this data as the
+//    initial state for its own cache, preventing the need for an immediate re-fetch
+//    and eliminating loading spinners.
 
 // This is not a standard import; it's a special package that acts as a guard.
 // Its only purpose is to ensure that this module is never accidentally imported into a
@@ -11,19 +27,12 @@
 // database connections, and secrets are never bundled and sent to the user's browser.
 import "server-only";
 
-// Imports a factory function from the tRPC library, specifically from its module designed
-// for React Server Components (`rsc`).
-// `createHydrationHelpers`: This function is the main tool for bridging server-fetched data
-// with the client-side React Query cache. "Hydration" is the process of taking the state
-// (the data) generated on the server and using it as the initial state on the client.
-// This prevents the client from having to immediately re-fetch the same data the server
-// just fetched, providing a seamless user experience with no loading spinners for initial data.
+// Imports helper functions for handling the hydration process.
 import { createHydrationHelpers } from "@trpc/react-query/rsc";
 
-// Imports a dynamic function from Next.js that is specific to the App Router.
-// `headers()`: This function can only be used inside Server Components. When called, it returns
-// a read-only object containing the incoming HTTP request headers for the current request.
-// This is necessary so that our server-side tRPC context can be aware of the request details.
+// Imports a Next.js App Router function that provides read-only access to the
+// incoming HTTP request headers for the current request. This function can only be
+// used inside Server Components or other server-only functions.
 import { headers } from "next/headers";
 
 // Imports a new, powerful memoization function from the React library itself, designed for Server Components.
@@ -31,11 +40,14 @@ import { headers } from "next/headers";
 // server render pass, the wrapped function is only executed ONCE. If multiple different components
 // in the render tree call the same cached function, all subsequent calls after the first one will
 // receive the cached result instead of re-executing it. This is a crucial optimization to prevent
-// redundant database queries or API calls within the same 
+// redundant database queries or API calls.
 import { cache } from "react";
 
-// Imports two crucial pieces from The main tRPC router definition file (`/server/api/root.ts`).
 // The `~/` is a path alias that points to your `src` directory, making imports cleaner.
+
+// - `createCaller`: A factory function used to create a server-side caller object. This
+//   allows Server Components to execute tRPC procedures directly.
+//
 // - `type AppRouter`: This is NOT JavaScript code; it's a TypeScript "type definition". The `type` keyword
 //   ensures that only the type information is imported, which has no impact on the final JavaScript bundle.
 //   `AppRouter` is the "blueprint" or "instruction manual" that describes the exact shape of your entire API:
@@ -44,7 +56,7 @@ import { cache } from "react";
 import { createCaller, type AppRouter } from "~/server/api/root";
 
 // Imports the function responsible for creating the tRPC context object. This function is defined
-// in your main tRPC setup file (`/server/api/trpc.ts`).
+// in the main tRPC setup file (`/server/api/trpc.ts`).
 // The "context" is an object containing resources that every tRPC procedure needs access to, such as
 // the database connection (`db`) and information about the incoming request (like headers).
 // We need to be able to create this context here so that when our server-side caller executes a

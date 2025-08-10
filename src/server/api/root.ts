@@ -1,6 +1,6 @@
-// The `~/` is a path alias configured in `tsconfig.json`, pointing to the `src/` directory.
-// This prevents messy relative paths like `../../../`.
-// import { postRouter } from "~/server/api/routers/post";
+// This file is the primary "root" router for your entire tRPC server. It acts as the
+// central hub or assembly point where all the modular, feature-specific routers
+// (e.g., `postRouter`, `taskRouter`) are combined into a single, unified API.
 
 // Imports the core helper functions from the main tRPC configuration file.
 // `createTRPCRouter`: A helper function to build a new tRPC router.
@@ -12,15 +12,18 @@ import { taskRouter } from "./routers/task";
 
 /**
  * This is the primary, or "root", router for your entire server.
- * It acts as a container that merges all the other modular routers (like postRouter, taskRouter)
+ * It acts as a container that merges all the other modular routers (like taskRouter)
  * into a single, unified API structure.
  */
-// We export `appRouter` so it can be used by the Next.js tRPC handler to create the actual API endpoint.
-export const appRouter = createTRPCRouter({
 
-  // This merges the `postRouter` into the main `appRouter` under the `post` namespace.
-  // On the frontend, all procedures inside `postRouter` will be accessed via `api.post.procedureName`.
-  // post: postRouter,
+// This line creates our main `appRouter` by calling the `createTRPCRouter` helper function.
+// `createTRPCRouter` takes a single configuration object where we "mount" all of our
+// feature-specific routers (like `taskRouter`) onto different namespaces.
+//
+// We then immediately `export` the resulting `appRouter` object. Its primary consumer
+// is the Next.js API route handler (at `src/app/api/trpc/[trpc]/route.ts`), which uses
+// this router to process all incoming API requests from the client.
+export const appRouter = createTRPCRouter({
 
   // This merges the `taskRouter` into the main `appRouter` under the `task` namespace.
   // Frontend access will look like `api.task.getAll`, `api.task.create`, etc.
@@ -44,6 +47,7 @@ export type AppRouter = typeof appRouter;
  * const trpc = createCaller(createContext); // `createContext` would be your context-generating function
  * const allPosts = await trpc.post.all();
  */
+
 // The `createCallerFactory` takes your main `appRouter` as an argument
 // and returns a new function, `createCaller`, which you can then use to build a server-side caller instance.
 export const createCaller = createCallerFactory(appRouter);

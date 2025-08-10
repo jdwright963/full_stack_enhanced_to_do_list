@@ -1,6 +1,4 @@
-// This file defines the React component for the `/login` page. As an interactive page that
-// handles user input and browser events, it must be a "Client Component", which is why it
-// starts with the `"use client";` directive.
+// This file defines the Next.js App Router page for the /login route.
 //
 // Its main responsibilities are:
 // 1. To render a login form with email and password fields.
@@ -21,14 +19,14 @@
 import { useState } from "react";
 
 // Imports the `signIn` function from the `next-auth/react` library. This is the primary
-// client-side function used to initiate a sign-in attempt. It communicates with the
-// NextAuth.js backend handler to authenticate the user's credentials.
+// client-side function used to initiate a sign-in attempt.
 import { signIn } from "next-auth/react";
 
-// Edit!!!
-// Imports the `useRouter` hook from Next.js's App Router navigation library.
-// This hook gives us access to the router instance, which allows us to programmatically
-// navigate the user to a different page (e.g., redirecting to the `/tasks` page after a successful login).
+// Imports the `useRouter` and `useSearchParams` hooks from Next.js's App Router navigation library.
+// - `useRouter`: This hook gives us access to the router instance, which allows us to programmatically
+//   navigate the user to a different page (e.g., redirecting to the `/tasks` page after a successful login).
+// - `useSearchParams`: This hook lets us read the current URL's query parameters (such as `?callbackUrl=/tasks`),
+//   making it easy to access values passed in the URL for things like redirects or conditional logic.
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Imports the `toast` function from the `react-hot-toast` library. This is a utility for
@@ -45,11 +43,9 @@ export default function LoginPage() {
   // which we will use to redirect the user after a successful login.
   const router = useRouter();
 
-  // EDIT!!!
   // Get the search parameters from the URL (e.g., "?callbackUrl=/tasks")
   const params = useSearchParams();
 
-  // EDIT!!!
   // Read the specific "callbackUrl" parameter, or default to "/tasks" if it's not there.
   const callbackUrl = params.get("callbackUrl") ?? "/tasks";
 
@@ -64,9 +60,6 @@ export default function LoginPage() {
   //    It's a shortcut for unpacking values from an array into distinct variables.
   //    - The first variable, `formData`, is assigned the first element from the returned array (the current state value).
   //    - The second variable, `setFormData`, is assigned the second element from the returned array (the setter function).
-  //
-  // `formData` is the variable you read from to get the current form data.
-  // `setFormData` is the function you call to update the data and trigger a re-render.
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   // 1. `useState(false)`: We call the `useState` hook again. This time, the initial value is `false`.
@@ -77,11 +70,9 @@ export default function LoginPage() {
   //      boolean value to conditionally disable the submit button or change its text.
   //    - The `setIsLoading` variable is assigned the second element (the setter function for this specific
   //      piece of state). We will call `setIsLoading(true)` when the form submission starts.
-  //
-  // Each call to `useState` creates a completely separate and independent piece of state.
   const [isLoading, setIsLoading] = useState(false);
 
-  // This function is an "event handler". Its purpose is to be executed every time a user
+  // This function is an event handler. Its purpose is to be executed every time a user
   // interacts with a form input. Specifically, it will be attached to the `onChange` prop of
   // our input fields in the JSX below. The `onChange` event fires on every single keystroke,
   // which means this function will run each time the user types or deletes a character.
@@ -129,7 +120,12 @@ export default function LoginPage() {
     // `...formData`: This is the "spread syntax". It copies all the current key-value pairs from the
     //   `formData` object into this new object. This is crucial because it ensures that when we update
     //   one field (like 'email'), we don't lose the value of the other fields (like 'password').
+    // 
     // `[e.target.name]: e.target.value`: This is a "computed property name". It's the key to making this function reusable.
+    // The brackets [] around a property name are a special signal to the JavaScript engine. They mean:
+    // "Don't use what's inside the brackets as a literal key. Instead, treat it as an expression, evaluate it 
+    // first, and then use the result of that expression as the property name."
+    // 
     //   - `e.target`: Refers to the specific `<input>` element the user typed into.
     //   - `e.target.name`: Gets the `name` attribute from that input (e.g., "email" or "password").
     //   - `e.target.value`: Gets the new text content of that input.
@@ -161,7 +157,7 @@ export default function LoginPage() {
     // "Logging in..." message and disable the submit button, preventing duplicate submissions.
     setIsLoading(true);
 
-    // A network request, like logging in, takes time. JavaScript doesn't wait for it by default; it
+    // A network request, like logging in, takes time. JavaScript doesn't wait for it by default. It
     // moves on to the next line immediately. A `Promise` is a special JavaScript object that acts
     // as a placeholder for the future result of an asynchronous operation.
     // A Promise starts in a pending state. Eventually, it will settle into one of two states:
@@ -169,7 +165,7 @@ export default function LoginPage() {
     // 2. Rejected: The operation failed, and the Promise now holds an error.
     //
     // `signIn(...)`: This function does not immediately return the login result. Instead, it
-    // immediately returns a `Promise` that is in the "pending" state.
+    // immediately returns a `Promise` that is in the pending state.
     //
     // `await`: This keyword is the key to working with Promises. It tells JavaScript:
     // "Pause the execution of this `handleSubmit` function right here. Wait until the Promise
@@ -186,9 +182,9 @@ export default function LoginPage() {
     //      redirect the user to the previous page on success. We set this to `false` to
     //      prevent that automatic redirect. Instead, the promise returned by `signIn` will
     //      resolve with an object containing the login result (`ok`, `error`, etc.).
-    //      This gives us manual control to show a success/error toast *before* we redirect.
+    //      This gives us manual control to show a success/error toast before we redirect.
     //
-        //    - `...formData`: This is the JavaScript "spread syntax" for objects. It's a concise way
+    //    - `...formData`: This is the JavaScript "spread syntax" for objects. It's a concise way
     //      to copy all of the key-value pairs from one object into another.
     //
     //      Imagine our `formData` state object looks like this: `{ email: "user@test.com", password: "123" }`.
@@ -196,8 +192,8 @@ export default function LoginPage() {
     //      object passed to `signIn` becomes the equivalent of writing this manually:
     //      {
     //        redirect: false,
-    //        email: "user@test.com", // <-- Copied from formData
-    //        password: "123"         // <-- Copied from formData
+    //        email: "user@test.com",  <-- Copied from formData
+    //        password: "123"          <-- Copied from formData
     //      }
     //
     //      This is how the credentials typed by the user into the form (and stored in our state) are
@@ -206,102 +202,53 @@ export default function LoginPage() {
       redirect: false,
       ...formData,
 
-      // EDIT!!!  
-      // Pass the callbackUrl to NextAuth
+      // This is the key that makes our dynamic redirection work. We are passing the `callbackUrl`
+      // variable (which we extracted from the URL search params earlier) into the `signIn` function.
+      //
+      // NextAuth's "credentials" provider is smart enough to look for this specific `callbackUrl`
+      // property in the options. While it won't perform the redirect itself (because we set `redirect: false`),
+      // it will include this URL in the response object it returns upon a successful login.
+      //
+      // For example, the `res` object might look like:
+      // { ok: true, error: null, url: "http://localhost:3000/tasks" }
+      //
+      // We can then use this `res.url` in our manual redirect logic (`router.push(...)`), ensuring
+      // the user is sent to the correct destination that was originally requested.
       callbackUrl,
-
     });
-
-    // EDIT!!!
-    // Stop the loading indicator
+    
+    // Immediately after the login attempt, we call `setIsLoading(false)` to reset the form's loading state. This will
+    // trigger a re-render, re-enabling the submit button and changing its text back to "Login",
+    // allowing the user to try again if the login failed.
     setIsLoading(false);
 
-    // debug
-    console.log("Login response:", res);
-
-
+    // This block of code checks if the login attempt resulted in an error.
+    // `res`: This is the response object returned from `await signIn(...)`.
+    // `?.`: This is the "optional chaining" operator. It's a safety check. If the `res` object
+    // is for some reason `null` or `undefined`, the entire expression will short-circuit and
+    // evaluate to `undefined` without crashing.
+    // `.error`: We access the `error` property of the response. If the login failed, NextAuth.js
+    // populates this property with a string describing the reason (e.g., "Invalid password").
+    // If the login was successful, this property will be `null`.
     if (res?.error) {
-      // If there was an error, show it in a toast
+
+      // If an error string exists, we pass it directly to the `toast.error` function.
+      // This displays a red, user-friendly error notification pop-up on the screen, providing
+      // immediate and clear feedback about why the login failed.
       toast.error(res.error);
+
+    // If `res.error` is null, this `else` block is executed, meaning the login was successful.
     } else {
-
-      // After successful login
-      console.log("Checking session token:");
-      const cookies = document.cookie.split(';');
-      const sessionToken = cookies.find(cookie => 
-        cookie.trim().startsWith('next-auth.session-token='));
-      console.log("Session token:", sessionToken);
-
-
-      // Add detailed session debugging here
-      console.log("Pre-refresh session check:");
-      await fetch('/api/auth/session')
-        .then(r => r.json())
-        .then(session => {
-          console.log('Session data:', session);
-          console.log('Cookies:', document.cookie);
-        });
-
 
       // If login was successful, show a success toast
       toast.success("Logged in!");
 
-      // EDIT!!!
-      router.refresh();
-
-      // Check session after refresh
-      console.log("Post-refresh session check:");
-      await fetch('/api/auth/session')
-        .then(r => r.json())
-        .then(session => {
-          console.log('Session data after refresh:', session);
-          console.log('Cookies after refresh:', document.cookie);
-        });
-
-      // EDIT!!!
+      // `router.push()`: This method from the Next.js `useRouter` hook performs a client-side navigation.
+      // It changes the URL in the browser's address bar and updates the page's content without a full-page reload.
+      //
+      // `callbackUrl`: This is the variable we created at the top of the component.
       router.push(callbackUrl);
-
-
-      // window.location.assign(res?.url ?? callbackUrl);
-
-      // router.push(res?.url ?? callbackUrl);
-
     } 
-    // EDIT!!!
-
-
-    // // This `if/else` block checks the result of the login attempt contained in the `res` object.
-    // // `res?.ok`: This is a check for a successful login.
-    // //   - `res?`: This is "optional chaining". It safely checks if `res` is not `null` or `undefined`
-    // //     before attempting to access the `ok` property. This prevents runtime errors.
-    // //   - `.ok`: This is a boolean property on the response object from `signIn`. It will be `true`
-    // //     if the `authorize` function on the backend returned a user object, and `false` otherwise.
-    // if (res?.ok) {
-
-    //   // This block runs only if the login was successful.
-    //   // We call the `toast.success` function to display a positive feedback notification to the user.
-    //   toast.success("Logged in!");
-
-    //   // We use the `router` instance from the `useRouter` hook to programmatically navigate the user.
-    //   // `router.push("/tasks")`: This redirects the user's browser to the main tasks page.
-    //   router.push("/tasks");
-
-    // // The `else` block runs if the `if` condition was false, meaning the login failed.
-    // } else {
-
-    //   // We call `toast.error` to display an error notification to the user.
-    //   // `res?.error`: The response object from a failed `signIn` contains an `error` property with the
-    //   //   specific error message we threw in our backend `authorize` function (e.g., "Invalid password").
-    //   // `|| "Login failed"`: This is a fallback. If for some reason `res.error` is missing,
-    //   //   we display a generic "Login failed" message to ensure the user always gets feedback.
-    //   toast.error(res?.error || "Login failed");
-    // }
-
-    // // This line is placed *after* the `if/else` block, so it will run regardless of whether
-    // // the login succeeded or failed.
-    // // We call our state setter function to set the loading status back to `false`. This re-enables
-    // // the submit button and changes its text back to "Login", making the form ready for another attempt.
-    // setIsLoading(false);
   };
 
   // The `return` statement specifies the UI that this component will render.
@@ -313,8 +260,8 @@ export default function LoginPage() {
     // The `className` uses Tailwind CSS utilities to style it.
     //
     // - `flex`: This is the key to the layout. It sets `display: flex`, which enables "Flexbox".
-    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension
-    //   (either a row or a column). When you apply `display: flex` to a container, you "unlock"
+    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension,
+    //   either a row (default) or a column. When you apply `display: flex` to a container, you "unlock"
     //   a powerful set of alignment properties for its direct children.
     //
     // - `min-h-screen`: Sets `min-height: 100vh` (100% of the viewport height), ensuring the container
@@ -338,7 +285,7 @@ export default function LoginPage() {
       // - `w-full`: Sets `width: 100%`.
       // - `max-w-md`: Sets a `max-width` of `28rem` (`448px`).
       //
-      //   **Why use both?** This is a standard responsive design pattern. On small screens (narrower
+      //   This is a standard responsive design pattern. On small screens (narrower
       //   than `28rem`), the form will be `w-full`, perfectly fitting the screen. On large screens,
       //   the form will stop growing at `max-w-md`. The form is then centered on the page by the
       //   `justify-center` flexbox property of its parent `<div>`.
@@ -355,14 +302,13 @@ export default function LoginPage() {
         {// This renders the main heading for the login form.
         // - `text-3xl`: Sets a large `font-size`.
         // - `font-bold`: Sets the `font-weight` to bold.
-}
+        }
         <h2 className="text-3xl font-bold">Login</h2>
 
         {// This `div` acts as a container or wrapper for the email label and its corresponding input field.
-        // This grouping helps with layout, especially with the `space-y-6` class on the parent `<form>`,
-        // which adds a consistent margin above this entire block.
+        // This grouping helps with layout and ensures the `space-y-6` on the parent `<form>` works correctly.
         }
-        <div>,
+        <div>
 
           {// This renders the visible text label for the email input field.
           // `htmlFor="email"`: This is a crucial attribute for accessibility and user experience. It
@@ -381,7 +327,8 @@ export default function LoginPage() {
             // to update the correct property in our `formData` state object.
             name="email"
 
-            // EDIT!!!
+            // `id="email"`: This ID is used to link the `<label>` above to this input via the `htmlFor` attribute.
+            // This is essential for accessibility.
             id="email" 
 
             // `value={formData.email}`: This is what makes this input a controlled component.
@@ -457,16 +404,16 @@ export default function LoginPage() {
             // string "password" as the key to update the correct `password` property in our `formData` state object.
             name="password"
 
-            // EDIT!!!
+            // `id="password"`: This ID is used to link the `<label>` above to this input via the `htmlFor` attribute,
+            // which is essential for accessibility.
             id="password"
 
-
-            // `value={formData.password}`: This forces the input's displayed value to be determined
-            // solely by our `formData.password` state variable. React's state is the single source of truth.
-            // When the state changes via `setFormData`, this `value` is updated on the next render.
+            // `value={formData.password}`: This forces the input's displayed value to be determined solely by
+            // our `formData.password` state variable, making React the single source of truth.
             value={formData.password}
 
-
+            // `onChange={handleChange}`: We reuse the exact same event handler as the email input. On every
+            // keystroke, this function is called, and it updates the `password` part of our `formData` state.
             onChange={handleChange}
 
             // `type="password"`: A standard and important HTML attribute for password fields.

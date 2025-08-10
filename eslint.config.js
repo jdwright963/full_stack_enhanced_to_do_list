@@ -5,7 +5,7 @@
 //
 // This configuration is highly opinionated and pre-tuned for the T3 Stack. It enforces
 // strict rules for TypeScript, React, and accessibility to help you write high-quality,
-// consistent, and maintainable code. It is the "guardian" of your codebase's quality.
+// consistent, and maintainable code.
 import { FlatCompat } from "@eslint/eslintrc";
 import tseslint from "typescript-eslint";
 

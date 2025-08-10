@@ -1,20 +1,12 @@
 // This file defines a Next.js App Router page that uses a "Dynamic Route Segment".
+// Since this is a "Server Component" by default, the entire logic inside this file runs
+// exclusively ON THE SERVER when a user visits a matching URL.
 //
 // In file-based routing, a regular route is a fixed path, like `/about`. A dynamic route,
 // however, is a flexible path that can match many different URLs. The special folder name `[token]`
 // is a dynamic segment. It acts as a wildcard, telling Next.js that this page should handle any URL
 // that follows the pattern `/verify-email/some-value-here`. The `some-value-here` part can be
-// anything, and it will be captured as a parameter named "token".
-//
-// Because this is a "Server Component" by default, the entire logic inside this file runs
-// exclusively ON THE SERVER when a user visits a matching URL. This is a highly secure and
-// efficient pattern for email verification. The process is:
-// 1. A user clicks a link like `/verify-email/abc123...`.
-// 2. The Next.js server sees that this matches the `[token]` dynamic route and runs this component.
-// 3. The function extracts the dynamic `token` part (`abc123...`) from the URL.
-// 4. It performs a direct database query to validate the token.
-// 5. It updates the user's record in the database upon successful validation.
-// 6. Finally, it sends a redirect command back to the user's browser.
+// anything, and it will be captured as a parameter named "token"
 
 // Imports our globally initialized Prisma Client instance from the server directory (`~/server/db`).
 // This direct database access is only possible because this is a Server Component.
@@ -30,19 +22,20 @@ import { redirect } from "next/navigation";
 // Next.js will automatically pass to our component because it's handling a dynamic route.
 interface VerifyEmailPageProps {
 
-  // `params`: This key is a special prop that Next.js provides to pages that use dynamic segments.
-  // Its value is an object containing the captured values from 
-  params: {
+  // `params`: This is a special prop that Next.js automatically provides to any page component
+  // that is rendered by a dynamic route. Its value is a plain object where the keys correspond
+  // to the dynamic segments in the URL.
+  params: 
 
-    // `token: string`: Inside the `params` object, we are defining a property named `token`.
+    // `token: string`: Inside the `params` object, we are defining a property (key value pair) named `token`.
     //
     // This is the crucial link. The name of this property, `token`, MUST EXACTLY MATCH the name
     // used in the dynamic route segment's folder name: `[token]`. This is how Next.js's file-based
     // routing system knows to take the value from the URL and place it into this specific `token` property.
     //
     // The `: string` is a TypeScript type annotation, guaranteeing that the `token` property will be a string.
-    token: string;
-  };
+    { token: string };
+  
 }
 
 // This defines and exports the main Server Component for this page.
@@ -113,7 +106,7 @@ export default async function VerifyEmailPage({ params }: VerifyEmailPageProps) 
 
       // `emailVerified: new Date()`: We set the `emailVerified` field in the database to the
       // current date and time. Storing a timestamp is a common and robust pattern to know
-      // not just if a user verified, but also *when*. This is the key action of this entire page.
+      // not just if a user verified, but also when. 
       emailVerified: new Date(),
 
       // `verificationToken: null`: This is a crucial security step. We set the `verificationToken`

@@ -1,6 +1,6 @@
 // This `next.config.js` file is automatically generated and configured by `create-t3-app`.
 // It is the central configuration file for the Next.js framework itself. While it starts
-// mostly empty, you can use it to customize core Next.js behaviors like redirects, headers,
+// mostly empty, it can be used to customize core Next.js behaviors like redirects, headers,
 // and build process optimizations.
 //
 // The T3 stack adds a unique line (`import "./src/env.js"`) to this file. This line's purpose
@@ -15,7 +15,11 @@
  */
 import "./src/env.js";
 
+// Type annotation for the Next.js configuration object
+// The config object is intentionally left empty, relying on Next.js' default configuration.
 /** @type {import("next").NextConfig} */
 const config = {};
 
+// Exports the Next.js configuration object as the default export of this module,
+// making it available for use by Next.js when building and running the application.
 export default config;

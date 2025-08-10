@@ -1,7 +1,5 @@
-// This file defines the `AuthStatus` component, a reusable piece of UI whose sole
-// purpose is to display the current user's authentication state. As a component that
-// needs to react to user-specific data (the session) and handle user actions (clicks),
-// it must be a "Client Component", which is why it's marked with `"use client";`.
+// This file defines the `AuthStatus` component, a reusable piece of UI with the sole
+// purpose to display the current user's authentication state.
 //
 // It conditionally renders different UI based on the session status:
 // - If the user is logged in, it displays a welcome message and a "Sign Out" button.
@@ -13,29 +11,24 @@
 // interactive features that can only exist and run on the client side.
 'use client';
 
-// EDIT!!!
-import Link from "next/link";
-
 // This line imports three key client-side utilities from the `next-auth/react` library.
-// These are the primary tools for interacting with the NextAuth.js system from the frontend.
 //
-// - `signIn`: A function you call to initiate the sign-in process. When called (e.g., from an
-//   `onClick` handler), it will redirect the user to your configured sign-in page or, for OAuth
-//   providers like Discord, to the provider's authorization screen.
+// - `signIn`: A powerful, multi-purpose function to initiate the sign-in process. Its
+//   behavior depends on the arguments provided:
+//   - `signIn()` (with no arguments): Redirects the user to your configured sign-in page (`/login`).
+//     This is used for links or buttons that start the login flow.
+//   - `signIn('credentials', { ...data })`: Sends the user's credentials (e.g., email/password)
+//     to the backend to actually perform the authentication. This is used inside the login form.
 //
 // - `signOut`: A function you call to log the user out. When called, it will clear the user's
-//   session cookie and redirect them back to the homepage.
+//   session cookie and reload the page to reflect the unauthenticated state.
 //
-// - `useSession`: This is a React "hook". Its job is to securely read the user's current
-//   authentication state from the global `SessionProvider` (which we set up in `layout.tsx`).
-//   It does not perform authentication itself; it simply reports the result. It returns an
-//   object containing the session `data` (including the user's details if logged in) and a
-//   `status` string ('loading', 'authenticated', or 'unauthenticated')
+// - `useSession`: A React hook that securely reads the user's current authentication state from
+//   the global `SessionProvider`. It returns the session `data` and a `status` string.
 import { signIn, signOut, useSession } from "next-auth/react";
 
 // This defines and exports a "Function Component" named `AuthStatus`.
 // `export`: This keyword makes the component available to be imported and used in other files
-// (for example, it could be placed in the main `layout.tsx` to appear on every page).
 export function AuthStatus() {
 
   // This line calls the `useSession` hook to get the current authentication state.
@@ -54,7 +47,10 @@ export function AuthStatus() {
 
     // This `div` serves as the main container for the component's UI.
     // The `className` uses Tailwind CSS utilities to style it:
-    // - `flex`: Enables a Flexbox layout.
+    // - `flex`: This is the key to the layout. It sets `display: flex`, which enables "Flexbox".
+    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension,
+    //   either a row (default) or a column. When you apply `display: flex` to a container, you "unlock"
+    //   a powerful set of alignment properties for its direct children.
     // - `justify-end`: A Flexbox property that aligns the content to the far right (end) of the container.
     // - `p-4`: Adds padding of `1rem` on all sides.
     // - `border-b`: Adds a 1px border to the bottom of the element.
