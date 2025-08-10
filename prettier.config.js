@@ -2,11 +2,11 @@
 // Prettier is an "opinionated code formatter." Its sole job is to ensure that all code in
 // the project has a consistent style by automatically reformatting it. It handles things like
 // indentation, spacing, quote styles, and line wrapping, removing all arguments about
-// code style from your team.
+// code style from the developer team.
 //
 // The configuration here includes the `prettier-plugin-tailwindcss`, a crucial plugin
-// that automatically sorts your Tailwind CSS classes in a logical, recommended order.
-// This keeps your JSX clean and predictable.
+// that automatically sorts the Tailwind CSS classes in a logical, recommended order.
+// This keeps the JSX clean and predictable.
 /** @type {import('prettier').Config & import('prettier-plugin-tailwindcss').PluginOptions} */
 export default {
   plugins: ["prettier-plugin-tailwindcss"],

@@ -4,7 +4,6 @@
 // backend (like sending verification emails or password resets) without duplicating the SMTP
 // connection logic. This improves efficiency and maintainability.
 
-// Imports the default export from the `nodemailer` library.
 // Nodemailer is a popular and powerful Node.js module for sending emails via an SMTP server.
 import nodemailer from "nodemailer";
 
@@ -16,7 +15,7 @@ import nodemailer from "nodemailer";
 export const transporter = nodemailer.createTransport({
 
   // `host`: The hostname of the SMTP (Simple Mail Transfer Protocol) server to connect to.
-  // This value (e.g., "smtp.resend.com") is loaded securely from the project's environment variables.
+  // This value is loaded securely from the project's environment variables.
   host: process.env.SMTP_HOST,
 
   // `port`: The port number on the SMTP server for the connection.
@@ -24,7 +23,13 @@ export const transporter = nodemailer.createTransport({
   // convert the string value into an integer, which is the required type for the port number.
   // `process.env.SMTP_PORT || "587"`: This is a robust pattern. It first tries to read the `SMTP_PORT`
   // variable. If that variable is missing or empty, the logical OR (`||`) operator provides a
-  // default fallback value of "587", a very common port for SMTP with STARTTLS.
+  // default fallback value of "587".Port 587 is a very common port for modern email submission. It uses a protocol
+  // called STARTTLS (Start Transport Layer Security). Here's how it works:
+  // 1. The connection begins on a standard, unencrypted channel.
+  // 2. The email client explicitly requests ("starts") an upgrade to a secure TLS connection.
+  // 3. If the server supports it, the entire rest of the communication is encrypted.
+  // This opportunistic encryption model is why the `secure` option below is set to `false`,
+  // as the initial handshake is not secure, but it is immediately upgraded.
   port: parseInt(process.env.SMTP_PORT || "587"),
 
   // `secure`: A boolean that configures the connection's security protocol.
@@ -47,26 +52,25 @@ export const transporter = nodemailer.createTransport({
 });
 
 // This defines and exports an asynchronous utility function specifically for sending verification emails.
-// `export`: Makes this function available to be imported and used by other server-side files (e.g., from a tRPC mutation).
+// `export`: Makes this function available to be imported and used by other server-side files.
 // `async`: Declares that this function performs asynchronous operations (like sending an email) and will return a Promise.
 // It accepts two arguments, both explicitly typed as strings for TypeScript safety:
 // - `email`: The recipient's email address.
 // - `token`: The unique, single-use verification token generated for this user.
 export async function sendVerificationEmail(email: string, token: string) {
 
-  // EDIT!!!
-  // This line constructs the full, clickable verification URL that the user will receive in their email.
-  // It uses a JavaScript "template literal" (the backticks `` ` ``) to easily embed variables into a string.
-  // - `${process.env.NEXT_PUBLIC_APP_URL}`: Fetches the base URL of the web application from environment variables.
-  // - `/verify-email?token=${token}`: Appends the specific frontend route for verification and includes the
-  //   unique `token` as a URL query parameter. The final URL will be something like "http://localhost:3000/verify-email?token=...".
+  // This line builds the full verification URL that will be sent to the user.
+  // It uses a template literal to combine the app's public base URL (from environment variables)
+  // with the verification route and the user's unique token as a path segment.
+  // Example result: "http://localhost:3000/verify-email/abc123token"
+  // This URL will be clickable in the email and is used to verify the user's account.
   const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email/${token}`;
 
   // This line executes the email sending operation.
   // `await`: This keyword pauses the execution of the `sendVerificationEmail` function until the
   // `sendMail` method has finished communicating with the SMTP server and the email is sent (or an error occurs).
   // `transporter.sendMail()`: This is the core method from our reusable Nodemailer transporter object.
-  // It takes a single "mail options" object that defines every aspect of the email to be sent.
+  // It takes a single object that defines every aspect of the email to be sent.
   await transporter.sendMail({
 
     // EDIT!!!

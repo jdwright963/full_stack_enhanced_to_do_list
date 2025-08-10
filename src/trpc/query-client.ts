@@ -10,16 +10,16 @@
  * 2. The `QueryClient`:
  *    - What it is: The main object from the React Query library. An instance of `QueryClient` IS the cache.
  *    - The "Two Brains" Architecture: In the T3 stack, a temporary `QueryClient` is created on the server for
- *      each request, and a long-lived `QueryClient` exists on the client (in the browser). This file is the
+ *      each request, and a long-lived `QueryClient` exists on the client (in the browser). This file (query-client.ts) is the
  *      single blueprint used to create BOTH, ensuring their settings are identical.
  *
  * 3. tRPC (`@trpc/...`):
  *    - What it is: The type-safe API framework.
- *    - Its Job: To provide a seamless, type-safe way to call backend procedures. In the T3 stack, tRPC is
+ *    - Its job is to provide a seamless, type-safe way to call backend procedures. In the T3 stack, tRPC is
  *      configured to use React Query as its data management "engine". When you call a tRPC hook like
  *      `api.task.getAll.useQuery()`, it's actually telling the `QueryClient` to manage the fetching and caching.
  *
- * 4. Hydration (The Bridge between Server and Client):
+ * 4. Hydration:
  *    - Dehydration (Server): The process of taking data from the server's `QueryClient`, serializing it
  *      into a string, and sending it to the browser with the initial HTML.
  *    - Hydration (Client): The process of taking that string and using it to pre-populate the client's `QueryClient`,
@@ -61,7 +61,7 @@ import SuperJSON from "superjson";
 export const createQueryClient = () =>
 
   // This creates a new instance of the `QueryClient` class.
-  // We pass a single, large configuration object to its constructor to define its default behavior.
+  // We pass a single, large configuration object to the constructor to define its default behavior.
   new QueryClient({
 
     // `defaultOptions`: This property allows us to set default options that will apply to
@@ -73,10 +73,6 @@ export const createQueryClient = () =>
       // (i.e., any data-fetching initiated by `useQuery`, `useSuspenseQuery`, etc.).
       queries: {
         
-        // This comment, provided by the T3 boilerplate, hints at the purpose of the setting below:
-        // "With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client."
-
         // `staleTime`: This is one of the most important configuration options in React Query.
         // It defines the duration in milliseconds that cached data is considered "fresh".
         //
@@ -104,8 +100,7 @@ export const createQueryClient = () =>
       // `dehydrate`: This property contains options that control the "dehydration" process.
       // "Dehydration" is the process of taking the in-memory data from the server-side `QueryClient` cache
       // and serializing it into a string format (in this case, a SuperJSON string). This serialized
-      // string is then embedded in the initial HTML sent to the browser. It's like freeze-drying
-      // the server's cache so it can be shipped to the client.
+      // string is then embedded in the initial HTML sent to the browser.
       dehydrate: {
 
         // `serializeData`: This option tells React Query how to serialize the data for each query.
@@ -115,9 +110,9 @@ export const createQueryClient = () =>
         // converted into a special string format that preserves their type information.
         serializeData: SuperJSON.serialize,
 
-        // `shouldDehydrateQuery`: This option is a function that acts as a "filter". It is called for
-        // every single query in the server's cache, and it must return `true` or `false`. Only queries
-        // for which this function returns `true` will be included in the dehydrated (serialized) data.
+        // `shouldDehydrateQuery`: This option is a function that acts as a filter. It is called for
+        // every single query in the server's cache, and it returns `true` or `false`. Only queries
+        // for which this function returns `true` will be included in the dehydrated data.
         // The function receives a `query` object, which contains information about a specific query in the cache.
         // The logic here extends the default behavior.
         shouldDehydrateQuery: (query) =>
@@ -150,35 +145,21 @@ export const createQueryClient = () =>
           // Our custom logic tells the server, "Yes, I know this query is still pending, but I want you to
           // include it in the dehydrated state anyway."
           // The client receives the dehydrated state and sees a query marked as `pending`. The client-side
-          // tRPC hook then says, "Aha! The server has already started fetching this data for me. I will not
+          // tRPC hook then says, "The server has already started fetching this data for me. I will not
           // start a new request. I will simply wait for the server's original request to complete."
-          //
-          // This ensures a seamless and efficient data flow. The data fetching is initiated on the server,
-          // and the client intelligently "adopts" or "waits for" that existing data fetch instead of
-          // wastefully starting its own.
-          defaultShouldDehydrateQuery(query) ||
-          query.state.status === "pending",
+          defaultShouldDehydrateQuery(query) || query.state.status === "pending",
       },
 
       // `hydrate`: This property contains options that control the "hydration" process.
       // "Hydration" is the process of taking the serialized data string (which was "dehydrated"
       // on the server and sent with the initial HTML) and re-populating the client-side
-      // `QueryClient` cache with it. It's like adding water to the "freeze-dried" server cache
-      // to bring it back to a living, usable state in the browser.
+      // `QueryClient` cache with it.
       hydrate: {
 
         // `deserializeData`: This option tells React Query how to parse the serialized data
         // for each query it finds in the hydration payload.
         // By default, it would use standard `JSON.parse`, which would not correctly handle the
-        // special format used by SuperJSON for complex types like Dates.
-        //
-        // `SuperJSON.deserialize`: We are overriding the default and telling React Query to use the
-        // `deserialize` method from the SuperJSON library. This function knows how to read the
-        // special SuperJSON string format and correctly reconstruct the original JavaScript objects,
-        // preserving all the complex types.
-        //
-        // This is the crucial final step that completes the end-to-end type-safe data flow,
-        // ensuring that a `Date` object on the server arrives as a `Date` object on the client.
+        // special format used by SuperJSON for complex types like Dates. See similar comment above for more details.
         deserializeData: SuperJSON.deserialize,
       },
     },

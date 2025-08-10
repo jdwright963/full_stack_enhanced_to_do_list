@@ -23,20 +23,20 @@ import { auth } from "~/server/auth";
 
 // This defines and exports the main React component for the homepage.
 // `export default`: Makes this component the primary export for this file, as required by Next.js.
-// `async function Home()`: This is a key feature of Server Components. The `async` keyword allows us
-// to use `await` for data fetching and other asynchronous operations directly within the component's body.
+// `async function Home()`: The `async` keyword allows us to use `await` for data fetching 
+// and other asynchronous operations directly within the component's body.
 // The code inside this function will execute entirely on the server.
 export default async function Home() {
 
-  // This line securely fetches the current user's session data directly on the server.
+  // This line fetches the current user's session data directly on the server.
   // `await`: Pauses the rendering of this component on the server until the session has been retrieved.
   // `auth()`: This is the server-side function we imported from `~/server/auth`. It inspects the
   // incoming request for a valid session cookie. If found, it returns the full session object;
   // otherwise, it returns `null`.
   const session = await auth();
 
-    // This is a server-side "guard clause" that handles redirection for authenticated users.
-  // `if (session?.user)`: This condition uses "optional chaining". It safely checks if `session`
+  // This is a server-side guard clause that handles redirection for authenticated users.
+  // `if (session?.user)`: This condition uses optional chaining. It safely checks if `session`
   // exists, and if it does, it checks for the `user` property. This is a concise way to
   // check if the user is currently logged in.
   if (session?.user) {
@@ -54,6 +54,11 @@ export default async function Home() {
     // The `<main>` tag is a semantic HTML element for the primary content of the page.
     // The `className` uses Tailwind CSS utilities to style the main container.
     // - `flex flex-col`: Enables a flexbox layout and sets its direction to a column.
+    //     Flexbox is a CSS layout model designed for arranging
+    //     items in a single dimension (either a row or a column). It provides powerful
+    //     and flexible control over alignment, spacing, and ordering of elements, making it
+    //     perfect for centering content both vertically and horizontally.
+
     // - `min-h-screen`: Ensures the container takes up at least the full height of the browser viewport.
     // - `items-center`: Horizontally centers the items in the column.
     // - `justify-center`: Vertically centers the items in the column.
@@ -67,11 +72,11 @@ export default async function Home() {
       //
       // The `className` prop applies several Tailwind CSS utility classes to style the heading:
       // - `text-5xl`: Sets a very large base `font-size` of `3rem`.
-      // - `font-extrabold`: Sets the `font-weight` to `800`, making the text very bold and impactful.
+      // - `font-extrabold`: Sets the `font-weight` to `800`, making the text very bold.
       // - `tracking-tight`: Reduces the `letter-spacing`, pulling the letters slightly closer together for a compact, modern look.
       // - `text-center`: Applies `text-align: center`, horizontally centering the text within its container.
       // - `sm:text-[4rem]`: This is a "responsive" utility. The `sm:` prefix is a breakpoint that targets
-      //   "small" screens (640px wide) and up. This means on very small mobile devices, the font size will
+      //   "small" screens (640px wide) and up (so just not very small screens). This means on very small mobile devices, the font size will
       //   be `3rem`, but on tablets and desktops, it will be an even larger `4rem`.
       }
       <h1 className="text-5xl font-extrabold tracking-tight text-center sm:text-[4rem]">
@@ -114,7 +119,7 @@ export default async function Home() {
       //   the descriptive text and the action buttons.
       // - `flex`: Sets `display: flex`. This enables a Flexbox layout, which by default places
       //   its direct children (the two Links) side-by-side in a row.
-      // - `gap-6`: A Flexbox/Grid property that sets a `gap` of `1.5rem` *between* the child elements.
+      // - `gap-6`: A Flexbox/Grid property that sets a `gap` of `1.5rem` between the child elements.
       //   This is the modern, clean way to create space between items without using margins.
       }
       <div className="mt-10 flex gap-6">
@@ -127,8 +132,23 @@ export default async function Home() {
         }
         <Link
 
-          // EDIT!!!
-          // The `href` prop specifies the destination path. This will navigate to the `/login` page.
+          // The `href` prop specifies the destination URL.
+          // Here, we are doing more than just linking to `/login`. We are also adding a "query parameter"
+          // to the URL to provide extra information to the login page.
+          //
+          // 1. `/login`: The base path. This tells Next.js to navigate to the login page.
+          //
+          // 2. `?`: This character marks the beginning of the "query string".
+          //
+          // 3. `callbackUrl=/tasks`: This is a key-value pair.
+          //    - `callbackUrl`: This is the name (the "key") of our parameter. This is a special parameter
+          //      that NextAuth.js understands by default.
+          //    - `/tasks`: This is the value. It is the URL-encoded path to the tasks page.
+          //
+          // By providing a `callbackUrl`, we are telling NextAuth.js: "After the user successfully
+          // signs in on the login page, please automatically redirect them to the `/tasks` page."
+          // This creates a much smoother user experience than just sending them back to the homepage
+          // after they log in. It takes them directly to where they wanted to go.
           href="/login?callbackUrl=/tasks"
 
           // The `className` styles the link to visually appear as a large, primary button.

@@ -14,14 +14,10 @@
 # TO RUN ON WINDOWS:
 # 1. Install WSL (Windows Subsystem for Linux) - https://learn.microsoft.com/en-us/windows/wsl/install
 # 2. Install Docker Desktop or Podman Deskop
-# - Docker Desktop for Windows - https://docs.docker.com/docker-for-windows/install/
-# - Podman Desktop - https://podman.io/getting-started/installation
-# 3. Open WSL - `wsl`
+# 3. Open WSL
 # 4. Run this script - `./start-database.sh`
 
 # On Linux and macOS you can run this script directly - `./start-database.sh`
-
-# import env variables from .env
 
 # This is a shell command that sets an option for the current shell session.
 # `set -a`: The `-a` flag (short for `allexport`) tells the shell to automatically
@@ -36,18 +32,18 @@ set -a
 # shell variables (like `$DATABASE_URL`) and, because of `set -a`, marking them for export.
 source .env
 
-# --- The following lines parse the DATABASE_URL string to extract individual parts ---
 # The script assumes a DATABASE_URL format like: "postgresql://postgres:DB_PASSWORD@localhost:DB_PORT/DB_NAME"
-
 # This line creates a new shell variable named `DB_PASSWORD`.
 # `$(...)`: This is "command substitution". The shell will execute the entire command inside the
 # parentheses and replace the `$(...)` with the command's output.
 #
 # Let's trace the command pipeline (`|` passes the output of one command to the input of the next):
 # 1. `echo "$DATABASE_URL"`: Prints the full database URL string.
+
 # 2. `awk -F':' '{print $3}'`: This is the first `awk` command. `awk` is a powerful text-processing tool.
 #    - `-F':'`: Sets the "Field Separator" to a colon `:`. It splits the string into fields based on the colon.
 #    - `'{print $3}'`: Prints the 3rd field. For our URL, this would be "DB_PASSWORD@localhost".
+
 # 3. `awk -F'@' '{print $1}'`: This is the second `awk` command. It takes the previous result ("DB_PASSWORD@localhost").
 #    - `-F'@'`: Sets the Field Separator to the "@" symbol.
 #    - `'{print $1}'`: Prints the 1st field, which is just "DB_PASSWORD".

@@ -1,12 +1,4 @@
-// This file defines the React component for the `/register` page. This is an interactive
-// page where a new user can create an account. As such, it must be a "Client Component",
-// which is why it starts with the `"use client";` directive.
-//
-// Its main responsibilities are:
-// 1. To render a registration form (e.g., email and password fields).
-// 2. To manage the state of the form's inputs and submission status.
-// 3. To call a backend API endpoint when the form is submitted to create the new user.
-// 4. To provide feedback to the user (e.g., "Registration successful!") and redirect them.
+ // This file defines the Next.js App Router page for the  `/register` route. 
 
 // This directive is essential. It marks this component as a "Client Component", meaning its
 // JavaScript will be sent to and run in the user's browser. This is required because this
@@ -15,7 +7,7 @@
 "use client";
 
 // Imports the `useState` hook from the React library. This is a fundamental hook that allows
-// function components to have "state" — variables whose changes will cause the component to
+// function components to have "state" which are variables whose changes will cause the component to
 // re-render and update the UI. We will use it to store the user's input for email and password,
 // and to track the form's loading status during submission.
 import { useState } from "react";
@@ -32,8 +24,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 // Defines and exports the main React component for the registration page.
-// `export default`: This is standard ES Module syntax that makes this component the primary
-// export of this file, allowing the Next.js routing system to find and render it for the `/register` route.
+// `export default`: This makes this component the primary export of this file, allowing
+//  the Next.js routing system to find and render it for the `/register` route.
 export default function RegisterPage() {
 
   // Calls the `useRouter` hook to get access to the Next.js router instance.
@@ -50,7 +42,7 @@ export default function RegisterPage() {
   //    `[ currentValue, setterFunction ]`.
   // 3. `const [formData, setFormData] = ...`: This is "Array Destructuring". It unpacks the array:
   //    - `formData`: The first variable is assigned the first element of the array (the current state object).
-  //    - `setFormData`: The second variable is assigned the second element (the function to update this state).
+  //    - `setFormData`: The second variable is assigned the second element (the function to update this state and triggers a re-render).
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -67,7 +59,7 @@ export default function RegisterPage() {
   //      a re-render to update the UI (e.g., disable the button and change its text).
   const [isLoading, setIsLoading] = useState(false);
 
-    // This function is an "event handler". Its purpose is to be executed every time a user
+  // This function is an event handler. Its purpose is to be executed every time a user
   // interacts with a form input. Specifically, it will be attached to the `onChange` prop of
   // our input fields in the JSX below. The `onChange` event fires on every single keystroke,
   // which means this function will run each time the user types or deletes a character.
@@ -76,7 +68,7 @@ export default function RegisterPage() {
   // this single function can handle all of them by using the `name` attribute of the HTML
   // input to dynamically update the correct piece of state.
   //
-  // 1. `const handleChange = ...`
+  // 1. `const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {`
   //    - This is an arrow function expression. We are defining a function and assigning it to a
   //      constant variable named `handleChange`. This is the standard way to define functions
   //      inside a React component.
@@ -87,9 +79,9 @@ export default function RegisterPage() {
   //    - `e`: The name of the single parameter this function accepts. When the `onChange` event
   //      fires, React automatically calls this handler and passes a "Synthetic Event" object
   //      as this argument. Different browsers (Chrome, Firefox, etc.) can have minor
-  //        differences in their native event objects. React creates a "Synthetic Event" as a
-  //        consistent, cross-browser wrapper. This ensures properties like `e.target.value`
-  //        work identically for every user on every browser.
+  //      differences in their native event objects. React creates a "Synthetic Event" as a
+  //      consistent, cross-browser wrapper. This ensures properties like `e.target.value`
+  //      work identically for every user on every browser.
   //
   //    - `:`: The colon begins a TypeScript "type annotation," which specifies the data type of the `e` parameter.
   //
@@ -115,7 +107,12 @@ export default function RegisterPage() {
     // `...formData`: This is the "spread syntax". It copies all the current key-value pairs from the
     //   `formData` object into this new object. This is crucial because it ensures that when we update
     //   one field (like 'email'), we don't lose the value of the other fields (like 'password').
-    // `[e.target.name]: e.target.value`: This is a "computed property name". It's the key to making this function reusable.
+    // 
+    // `[e.target.name]: e.target.value`: This is a computed property name. It's the key to making this function reusable.
+    // The brackets [] around a property name are a special signal to the JavaScript engine. They mean:
+    // "Don't use what's inside the brackets as a literal key. Instead, treat it as an expression, evaluate it 
+    // first, and then use the result of that expression as the property name."
+    // 
     //   - `e.target`: Refers to the specific `<input>` element the user typed into.
     //   - `e.target.name`: Gets the `name` attribute from that input (e.g., "email" or "password").
     //   - `e.target.value`: Gets the new text content of that input.
@@ -155,9 +152,12 @@ export default function RegisterPage() {
       // `await`: This keyword pauses the execution of the `handleSubmit` function here until the
       // server has responded. The `Response` object from the server is then stored in the `res` variable.
       //
+      // Arguements:
       // 1. The URL: `"/api/register"`
-      //    - This is a relative URL pointing to the API endpoint we need to create to handle user registration.
-      //      This corresponds to a file at `src/app/api/register/route.ts` in our project.
+      //    - This is a relative URL pointing to the server-side API endpoint that will handle
+      //      the user registration logic.
+      //    - In our Next.js project, this URL corresponds to the handler file located at
+      //      `src/app/api/register/route.ts`.
       //
       // 2. The `options` object: This configures the details of the request.
       const res = await fetch("/api/register", {
@@ -178,7 +178,6 @@ export default function RegisterPage() {
         // `body`: This contains the actual data payload we are sending to the server.
         // `JSON.stringify(formData)`: We take our `formData` state object (which contains the
         // user's email and password) and serialize it into a JSON string (e.g., `'{"email":"...","password":"..."}'`).
-        // The request body must be a string, and JSON is the standard format for API communication.
         body: JSON.stringify(formData),
       });
 
@@ -226,7 +225,7 @@ export default function RegisterPage() {
       toast.error(error.message);
 
     // The `finally` block is a special part of the `try...catch` statement.
-    // The code inside `finally` will **always** be executed, regardless of whether the `try`
+    // The code inside `finally` will always be executed, regardless of whether the `try`
     // block completed successfully or the `catch` block was triggered by an error.
     // This makes it the perfect place for "cleanup" code.
     } finally {
@@ -244,30 +243,45 @@ export default function RegisterPage() {
   return (
 
     // This `div` acts as the main full-screen container for the entire registration page.
-    // The `className` uses Tailwind CSS utilities to style it as a centered layout.
-    // - `flex`: Sets `display: flex`, enabling a powerful layout model called "Flexbox".
-    // - `min-h-screen`: Sets `min-height: 100vh` (100% of the viewport height), ensuring the container takes up at least the full height of the browser window.
-    // - `items-center`: A Flexbox property that vertically aligns the child element (the form) in the center.
-    // - `justify-center`: A Flexbox property that horizontally aligns the child element (the form) in the center.
+    // The `className` uses Tailwind CSS utilities to style it.
+    //
+    // - `flex`: This is the key to the layout. It sets `display: flex`, which enables "Flexbox".
+    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension
+    //   (either a row or a column). When you apply `display: flex` to a container, you "unlock"
+    //   a powerful set of alignment properties for its direct children.
+    //
+    // - `min-h-screen`: Sets `min-height: 100vh` (100% of the viewport height), ensuring the container
+    //   takes up at least the full height of the browser window.
+    //
+    // - `items-center`: A Flexbox property. It aligns the children (the form) along the "cross axis".
+    //   For a default row-based flex container, this means it centers the form vertically.
+    //
+    // - `justify-center`: A Flexbox property. It aligns the children along the "main axis".
+    //   For a default row-based flex container, this means it centers the form horizontally.
+    //   By combining `items-center` and `justify-center`, we achieve perfect centering on the page.
+    //
     // - `bg-gray-900`: Sets the background color to a very dark gray.
     // - `text-white`: Sets the default text color for all child elements to white.
     <div className="flex min-h-screen items-center justify-center bg-gray-900 text-white">
 
       {// This renders the HTML `<form>` element, which will contain all the registration inputs and the submit button.
-      // `onSubmit={handleSubmit}`: This is the event handler for the form's submission. When the user
-      // clicks the submit button or presses Enter, React will automatically call the `handleSubmit` function
-      // that we defined earlier in the component's logic.
+      // `onSubmit={handleSubmit}`: When the user submits the form, React will call our `handleSubmit` function.
       //
-      // The `className` styles the form itself to look like a centered card.
+      // The `className` styles the form itself to look like a card.
       // - `w-full`: Sets `width: 100%`.
-      // - `max-w-md`: Sets a `max-width` of `28rem`. This is a responsive design pattern: on small screens,
-      //   the form will fill the width, but on large screens, it will stop growing, preventing it from looking too stretched out.
-      // - `space-y-6`: A utility that adds vertical space (`margin-top`) between all direct children of this
-      //   element, creating consistent spacing without needing to add margins to each child individually.
-      // - `rounded-lg`: Applies a large `border-radius` to give the card rounded corners.
-      // - `bg-gray-800`: Sets the background color of the form card.
-      // - `p-8`: Adds a large amount of padding (`2rem`) inside the form card.
-      // - `shadow-lg`: Adds a large, more pronounced box-shadow to lift the card off the background.
+      // - `max-w-md`: Sets a `max-width` of `28rem` (`448px`).
+      //
+      //   This is a standard responsive design pattern. On small screens (narrower
+      //   than `28rem`), the form will be `w-full`, perfectly fitting the screen. On large screens,
+      //   the form will stop growing at `max-w-md`. The form is then centered on the page by the
+      //   `justify-center` flexbox property of its parent `<div>`.
+      //
+      // - `space-y-6`: Adds vertical space (`margin-top`) between all direct children of the form
+      //   (the heading, the input divs, and the button), creating consistent spacing.
+      // - `bg-gray-800`: Sets the form's background color.
+      // - `p-8`: Adds large padding (`2rem`) inside the form.
+      // - `rounded-lg`: Applies rounded corners.
+      // - `shadow`: Adds a subtle box-shadow.
       }
       <form
         onSubmit={handleSubmit}
@@ -304,8 +318,14 @@ export default function RegisterPage() {
           }
           <input
 
-            // `type="email"`: A standard HTML attribute that provides browser-level benefits like
-            // basic email format validation and a specialized keyboard on mobile devices.
+            // `type="email"`: A standard HTML attribute that instructs the browser on how to treat this input field.
+            // This provides several important, free benefits for user experience and validation:
+            // 1. Mobile Keyboard Optimization: On most mobile devices, the browser will display a keyboard
+            //    that is optimized for email entry, featuring prominent '@' and '.' keys.
+            // 2. Built-in Validation: If this input is inside a `<form>` tag, many browsers will prevent
+            //    submission if the text entered does not conform to a standard email address format (e.g., text@text.com).
+            // 3. Accessibility: It provides semantic meaning to screen readers, which can announce to the
+            //    user that this is an "email edit text field".
             type="email"
 
             // `name="email"`: This HTML attribute is essential for our reusable `handleChange` function.
@@ -348,7 +368,7 @@ export default function RegisterPage() {
           // `htmlFor="password"`: This accessibility attribute links this label to the input field
           // that has a matching `id` of "password". When a user clicks this label, the browser
           // will automatically focus the cursor inside the password input box.
-          // The `className` styles the label text to be a block element with a specific size and weight.
+          // The `className` styles the label the same as the email label.
           }
           <label htmlFor="password" className="block text-sm font-medium">
             Password
@@ -391,9 +411,9 @@ export default function RegisterPage() {
         }
         <button
 
-          // `type="submit"`: A standard HTML attribute that designates this button as the primary
-          // submission control for its parent `<form>`. Clicking it will trigger the `onSubmit`
-          // event handler that is attached to the `<form>` element.
+          // `type="submit"`: A standard HTML attribute. This is what makes this button the default
+          // submit button for the parent `<form>`. Clicking it (or pressing Enter in an input field)
+          // will trigger the `onSubmit` event handler attached to the `<form>` tag.
           type="submit"
 
           // `disabled={isLoading}`: This is a dynamic attribute that controls whether the button is clickable.

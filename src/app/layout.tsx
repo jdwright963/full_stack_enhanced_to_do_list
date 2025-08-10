@@ -6,7 +6,7 @@
 // The special `{children}` prop is where the content of the currently active
 // page (e.g., `page.tsx`) will be rendered.
 //
-// Its most important role in a T3 app is to host global "Providers". Providers are
+// Its role in a T3 app is to host global "Providers". Providers are
 // wrapper components that give all child components access to a specific context
 // or functionality. This file provides:
 // - <Toaster>: For displaying global notifications.
@@ -18,12 +18,14 @@
 // to include these styles in the final, bundled CSS file. Because this is the root layout,
 // these styles will be available on every page. This file specifically contains the
 // essential `@tailwind` directives that inject all of Tailwind's CSS into the app.
-import "./globals.css";
+import "../styles/globals.css";
 
 // This imports the `Inter` font function from the `next/font` optimization package.
 // This is Next.js's recommended way to handle web fonts. It improves performance and
-// prevents layout shifts by downloading the font at build time and self-hosting it,
-// rather than fetching it from Google Fonts on every page load.
+// prevents "layout shifts" by downloading the font at build time and self-hosting it,
+// rather than fetching it from a third-party server (like Google Fonts) on every page load.
+// A layout shift is a common web performance issue where visible elements on a page
+// move or resize *after* they have already been rendered. This is often caused by web fonts.
 import { Inter } from "next/font/google";
 
 // This imports the `SessionProvider` React component. It is a "Context Provider" from NextAuth.js.
@@ -32,10 +34,27 @@ import { Inter } from "next/font/google";
 // that uses the `useSession` hook.
 import { SessionProvider } from "next-auth/react";
 
-// This imports the `SessionProvider` React component. It is a "Context Provider" from NextAuth.js.
-// Its job is to hold the user's authentication data (the "session"). When this component wraps
-// a part of the application, it makes the session data available to any child Client Component
-// that uses the `useSession` hook.
+// Imports the `auth` function from our central server-side authentication setup.
+// This function is the primary and most secure way to access the current user's session
+// on the server.
+//
+// Key Differences from `SessionProvider` or `useSession`:
+//
+// - Environment: `auth()` runs ONLY on the server. It directly reads the secure,
+//   http-only session cookie from the incoming request.
+//
+// - `useSession`: Runs ONLY on the client (in a `"use client"` component). It gets its
+//   data from the `<SessionProvider>`.
+//
+// We call `await auth()` to pre-fetch the user's session data during the initial server render.
+// This pre-fetched `session` object is then passed as a prop to the client-side `<SessionProvider>`.
+// This is a critical performance optimization that prevents a "flash of unauthenticated content" by
+// ensuring the client has the session data from the very first moment the page loads.
+// 
+// The path `~/server/auth` points to a directory, not a specific file. The build system
+// automatically resolves this to `~/server/auth/index.ts` because of a standard module
+// resolution rule. When you import from a directory, the resolver looks for an "index"
+// file to serve as the module's main entry point.
 import { auth } from "~/server/auth";
 
 // This imports the main tRPC provider component for the frontend. This is another Context Provider,
@@ -56,10 +75,12 @@ import { Toaster } from 'react-hot-toast';
 // character subset needed for Latin-based languages (like English), reducing the font file size.
 const inter = Inter({ subsets: ["latin"] });
 
-// This calls the `Inter` font function that we imported from `next/font/google`.
-// The returned `inter` object contains the necessary font data and a CSS class name.
-// `{ subsets: ["latin"] }`: This is an optimization. It tells Next.js to only download the
-// character subset needed for Latin-based languages (like English), reducing the font file size.
+// This exports the page's metadata. This is a special Next.js App Router object
+// that the framework looks for by name in `layout.tsx` or `page.tsx` files.
+// Next.js uses the properties of this object to automatically generate the
+// corresponding tags inside the `<head>` section of the final HTML document.
+// This is the standard way to set the page title, description, and other meta
+// tags for Search Engine Optimization (SEO) and browser behavior.
 export const metadata = {
 
   // This sets the content for the `<title>` tag in the page's HTML head.
@@ -72,10 +93,8 @@ export const metadata = {
 // This defines the main React component for the root layout.
 // `export default`: Makes this component the primary export of this file, which Next.js requires.
 // `async`: This is critical. It declares that this is an "async component", which allows us to use
-// the `await` keyword inside it. This is a feature of React Server Components.
+// the `await` keyword inside it.
 // `function RootLayout(...)`: The name of our component.
-// `({ children })`: This is object destructuring. The component receives a single `props` object,
-// and this syntax immediately extracts the `children` property from it into a local variable.
 export default async function RootLayout(
 
   // This is JavaScript object destructuring. It says "The first argument to this function
@@ -86,16 +105,21 @@ export default async function RootLayout(
 // This is TypeScript syntax defining the shape of the `props` object.
 // It declares that the props object will have a `children` property,
 // and the type of `children` is `React.ReactNode`, which can be any valid JSX content.
-: {
-  children: React.ReactNode;
-
-// The function body is after this.
-}) {
-
-  // It calls the `auth()` function we imported from our server-side auth configuration.
-  // The `await` keyword pauses the rendering of this component until the `auth()` function,
-  // which checks for the user's session cookie and queries the database, has completed.
-  // The resulting `session` object (or `null` if the user is not logged in) is stored in this constant.
+: { children: React.ReactNode; }) {
+  
+ // This is the beginning of the Server Component's function body.
+  // We call the `auth()` function imported from the server-side auth configuration.
+  //
+  // `await`: This keyword pauses the server-side rendering of this component until the `auth()`
+  // function has completed its work.
+  //
+  // `auth()`: With the configured JWT strategy, this function's job is to:
+  // 1. Read the secure, http-only session cookie from the incoming request.
+  // 2. Decrypt and validate the JSON Web Token (JWT) contained within that cookie.
+  //
+  // This operation does NOT query the database. The user's session data is self-contained
+  // within the JWT. The resulting `session` object (or `null` if the token is invalid,
+  // expired, or not present) is then stored in this constant.
   const session = await auth();
 
   // The `return` statement specifies the JSX that will be rendered as the page's HTML structure.
@@ -106,21 +130,23 @@ export default async function RootLayout(
     <html lang="en">
 
       {
+      // EDTT!!!
       // This renders the `<body>` element, which contains all the visible content of the page.
-      // `className={inter.className}`: This line is the key to activating the optimized font from `next/font`.
-      // The `inter` object we created earlier contains a pre-generated, unique CSS class name.
-      // By applying this class to the `<body>`, we are telling the browser to use the self-hosted 'Inter' font
-      // for all text within the body, as defined by our CSS variables in `globals.css`.
-      // This system also automatically includes the necessary fallback fonts (`ui-sans-serif`, etc.), ensuring
-      // that if 'Inter' fails to load for any reason, the text will still be readable in a standard system font.
+      //
+      // `className={inter.className}`: This line activates the optimized 'Inter' font for the entire application.
+      // The `inter.className` is a special class provided by the `next/font` package. This is a Next.js
+      // performance feature that self-hosts the font; it is not a standard Tailwind CSS class.
+      // Applying it here makes 'Inter' the base font that all of Tailwind's text utilities will use by default.
       }
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gray-900 text-white`}>
 
         
          {
-        // This renders the `Toaster` component. It's self-closing as it doesn't wrap any children. */}
-        // It invisibly sets up the global system for displaying toast notifications.
-        // `position="top-center"`: This prop configures the Toaster to make all notifications appear at the top-center of the screen.
+        // Renders the Toaster component from `react-hot-toast`. This component is self-closing
+        // because it doesn't wrap any other elements. Instead, it invisibly sets up the global
+        // system that listens for `toast()` function calls from anywhere in the app and displays
+        // the corresponding pop-up notifications. The `position` prop ensures all toasts
+        // appear at the top-center of the screen by default.
         }
         <Toaster position="top-center" /> 
 
@@ -143,8 +169,14 @@ export default async function RootLayout(
         <SessionProvider session={session}>
 
           {
-          // This renders the tRPC provider, which is another Context Provider.
-          // It sets up the client-side data fetching and caching layer for the entire application.
+          // This renders the main tRPC provider component. Like SessionProvider, it is a
+          // Context Provider, but it's responsible for the entire client-side data layer.
+          // By wrapping the application with `<TRPCReactProvider>`, we "provide" the configured
+          // tRPC client to every component in the tree.
+          //
+          // This is what makes it possible to use the tRPC hooks (like `api.task.getAll.useQuery()`
+          // or `api.task.create.useMutation()`) inside any client component. Those hooks
+          // work by "hooking into" the context that this provider makes available.
           }
           <TRPCReactProvider>
 
