@@ -245,10 +245,9 @@ export default function RegisterPage() {
     // This `div` acts as the main full-screen container for the entire registration page.
     // The `className` uses Tailwind CSS utilities to style it.
     //
-    // - `flex`: This is the key to the layout. It sets `display: flex`, which enables "Flexbox".
-    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension
-    //   (either a row or a column). When you apply `display: flex` to a container, you "unlock"
-    //   a powerful set of alignment properties for its direct children.
+    //  - `flex`: This sets `display: flex`, which enables the "Flexbox" layout model for the form's 
+    // direct children. By default, Flexbox arranges items in a horizontal row. This unlocks 
+    // a powerful set of alignment properties for the elements direct children.
     //
     // - `min-h-screen`: Sets `min-height: 100vh` (100% of the viewport height), ensuring the container
     //   takes up at least the full height of the browser window.

@@ -27,15 +27,14 @@ interface VerifyEmailPageProps {
   // to the dynamic segments in the URL.
   params: 
 
-    // `token: string`: Inside the `params` object, we are defining a property (key value pair) named `token`.
+    // `Promise<{ token: string }>`: This type definition states that the `params` prop is a
+    // Promise that, when awaited, will "resolve" to an object with a `token` property.
     //
-    // This is the crucial link. The name of this property, `token`, MUST EXACTLY MATCH the name
-    // used in the dynamic route segment's folder name: `[token]`. This is how Next.js's file-based
-    // routing system knows to take the value from the URL and place it into this specific `token` property.
-    //
-    // The `: string` is a TypeScript type annotation, guaranteeing that the `token` property will be a string.
-    { token: string };
-  
+    // - `{ token: string }`: This is the shape of the resolved object.
+    // - `token`: The name of this property is crucial. It MUST EXACTLY MATCH the name
+    //   used in the dynamic route segment's folder name: `[token]`.
+    // - `: string`: This guarantees that the `token` value from the URL will be a string.
+    Promise<{ token: string }>;
 }
 
 // This defines and exports the main Server Component for this page.
@@ -51,10 +50,20 @@ interface VerifyEmailPageProps {
 //    ensuring that `params` and `params.token` exist and are correctly typed.
 export default async function VerifyEmailPage({ params }: VerifyEmailPageProps) {
 
-  // This line uses object destructuring again, this time on the `params` object.
-  // It extracts the `token` property from `params` and assigns it to a new constant named `token`.
-  // This is a convenient shorthand for writing `const token = params.token;`.
-  const { token } = params;
+// This two-step process is required to access the `token` because the `params` prop is a Promise.
+// We cannot access its properties until it has been resolved.
+//
+// 1. `const paramsValue = await params;`:
+//    - The `await` keyword pauses the function's execution until the `params` Promise is fulfilled.
+//    - Once resolved, the "unwrapped" value—a plain object like `{ token: "some-value-from-url" }`—is
+//      assigned to the `paramsValue` constant.
+//
+// 2. `const { token } = paramsValue;`:
+//    - Now that we have the plain `paramsValue` object, we can safely use object destructuring.
+//    - This syntax extracts the `token` property from the object and creates a new constant
+//      named `token` containing its value.
+  const paramsValue = await params;
+  const { token } = paramsValue;
 
   // This is a "guard clause" that performs a basic check.
   // `if (!token)`: This condition is true if the `token` extracted from the URL is missing for any reason

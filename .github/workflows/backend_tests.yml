@@ -1,5 +1,3 @@
-
-# --- Purpose of this file ---
 # This YAML file defines a GitHub Actions "workflow". A workflow is an automated process that
 # runs one or more "jobs" whenever a specified event occurs in your repository.
 # This specific workflow is designed to automatically run your backend tests.
@@ -36,21 +34,21 @@ jobs:
       # The hyphen `-` indicates a list item, making this the first step.
       # The `uses` keyword tells this step to run a pre-built, reusable community action.
       # `actions/checkout@v3` is a critical official action that checks out your repository's code
-      # and downloads it onto the runner, so your workflow can access your files (like your test scripts).
+      # and downloads it onto the runner, so your workflow can access the files (like test scripts).
       # The `@v3` pins it to a specific major version for stability and security.
       - uses: actions/checkout@v3
 
       # This is the second step in the job, clearly labeled 'Set up Python'.
       - name: Set up Python
 
-        # It uses the official `setup-python` action to install a specific Python version onto the runner.
+        # It uses the official `setup-python` action to install Python onto the runner.
         uses: actions/setup-python@v4
 
         # The 'with' block provides input parameters to the action being used.
         with:
 
           # This input tells the action to install and make Python version 3.11 available in the environment.
-          # This ensures that your tests always run against the same version of Python for consistency.
+          # This ensures that the tests always run against the same version of Python for consistency.
           python-version: 3.11
 
       # This is the third step, responsible for installing the necessary Python packages.

@@ -1,9 +1,7 @@
-
-# --- Purpose of this file ---
-# This file is for conducting integration or end-to-end (E2E) tests on this T3 application's API.
-# It simulates an external client (one that is NOT using the tRPC client) making a direct HTTP request.
-# This is crucial for verifying that the API is correctly exposed to the public internet and behaves as expected.
-# We use Python and the `requests` library here, but this could be any language or tool (e.g., cURL, Postman).
+# This file is for conducting tests on this T3 application's API.
+# It simulates an external client (one that is NOT using the tRPC client, but will still access the api created by the trpc server)
+#  making a direct HTTP request. This is crucial for verifying that the API is correctly exposed to the public internet and behaves 
+# as expected. We use Python and the `requests` library here, but this could be any language or tool (e.g., cURL, Postman).
 
 # Imports the `requests` library, which is the standard Python library for making HTTP requests.
 # It allows us to easily send GET, POST, etc., requests to web servers.

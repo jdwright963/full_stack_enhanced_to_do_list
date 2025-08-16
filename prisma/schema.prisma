@@ -120,7 +120,6 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
 }
 
 // This model is used by NextAuth for "magic link" email sign-in. When a user
