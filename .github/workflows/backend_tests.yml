@@ -1,9 +1,9 @@
 # This YAML file defines a GitHub Actions "workflow". A workflow is an automated process that
-# runs one or more "jobs" whenever a specified event occurs in your repository.
-# This specific workflow is designed to automatically run your backend tests.
+# runs one or more "jobs" whenever a specified event occurs in the repository.
+# This specific workflow is designed to automatically run the backend tests.
 
 # The 'name' key sets the display name for this entire workflow.
-# This is the name you will see in the "Actions" tab of your GitHub repository,
+# This is the name you will see in the "Actions" tab of the GitHub repository,
 # making it easy to identify among other potential workflows (e.g., "Deploy to Production").
 name: Backend Tests
 
@@ -33,8 +33,8 @@ jobs:
 
       # The hyphen `-` indicates a list item, making this the first step.
       # The `uses` keyword tells this step to run a pre-built, reusable community action.
-      # `actions/checkout@v3` is a critical official action that checks out your repository's code
-      # and downloads it onto the runner, so your workflow can access the files (like test scripts).
+      # `actions/checkout@v3` is a critical official action that checks out the repository's code
+      # and downloads it onto the runner, so the workflow can access the files (like test scripts).
       # The `@v3` pins it to a specific major version for stability and security.
       - uses: actions/checkout@v3
 
@@ -61,7 +61,7 @@ jobs:
         # The second command activates the virtual environment we just created.
         # Any subsequent `pip` or `python` commands will now use the environment inside the 'venv' folder.
         # The third command uses pip (Python's package installer) to install all libraries listed in the `requirements.txt` file.
-        # This file should contain `pytest` and `requests` for your tests to work.
+        # This file should contain `pytest` and `requests` for the tests to work.
         run: |
           python -m venv venv
           source venv/bin/activate
