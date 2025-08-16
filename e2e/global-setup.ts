@@ -125,7 +125,7 @@ async function globalSetup() {
         // We are setting the `emailVerified` column to the current date and time. By seeding
         // this user as already verified, we simplify the login process for the other tests,
         // as they don't have to worry about the email verification step. `new Date()` creates
-        // a new JavaScript `Date` object representing the current moment.
+        // a new JavaScript `Date` object representing the current moment
         emailVerified: new Date(),
       },
     });
