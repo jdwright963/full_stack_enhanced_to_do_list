@@ -88,22 +88,22 @@ jobs:
           sleep 20
 
 
-      # - name: Print Next.js server logs
-      #   run: cat next_server.log
+      - name: Print Next.js server logs
+        run: cat next_server.log
 
-      # - name: Health check Next.js server
-      #   run: |
-      #     for i in {1..10}; do
-      #       if curl -sSf http://localhost:3000 > /dev/null; then
-      #         echo "Next.js server is up!"
-      #         exit 0
-      #       fi
-      #       echo "Waiting for Next.js server..."
-      #       sleep 2
-      #     done
-      #     echo "Next.js server failed to start."
-      #     cat next_server.log
-      #     exit 1
+      - name: Health check Next.js server
+        run: |
+          for i in {1..10}; do
+            if curl -sSf http://localhost:3000 > /dev/null; then
+              echo "Next.js server is up!"
+              exit 0
+            fi
+            echo "Waiting for Next.js server..."
+            sleep 2
+          done
+          echo "Next.js server failed to start."
+          cat next_server.log
+          exit 1
 
 
       # This is the fourth and final step: executing the actual tests.
