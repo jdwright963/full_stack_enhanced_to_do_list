@@ -28,10 +28,10 @@ export default defineConfig({
   testDir: './e2e',
 
   // This sets a global timeout for each individual test.
-  // `30_000`: This is 30,000 milliseconds (30 seconds). The underscore `_` is a numeric separator
+  // `60_000`: This is 60,000 milliseconds (60 seconds). The underscore `_` is a numeric separator
   // in TypeScript/JavaScript that has no effect on the value but makes large numbers easier to read.
   // If a single test (from `test(...)` to its end) takes longer than 30 seconds, it will be marked as "timed out" and failed.
-  timeout: 30_000,
+  timeout: 60_000,
 
   // `globalSetup`: This property tells Playwright to run a script before any tests are executed.
   // It's the perfect place to prepare the test environment, such as cleaning and seeding a database.

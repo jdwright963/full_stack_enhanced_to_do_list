@@ -151,66 +151,140 @@ test.describe("Authentication Flow", () => {
             // sent to our test user was found in the inbox.
             if (userMessage) {
 
-                console.log('userMessage keys:', Object.keys(userMessage));
-                console.log('userMessage raw:', JSON.stringify(userMessage, null, 2));
-
-                // const messageBody = userMessage.html_body ?? userMessage.text_body ?? userMessage.body;
-                // const match = messageBody?.match(/\/verify-email\/([a-zA-Z0-9\-_]+)/);
-
                 // Fetch the final, rendered HTML content for the specific message.
                 const htmlBody = await client.testing.messages.getHtmlMessage(inboxId, userMessage.id);
 
-                // Now that we have the HTML as a string, use a robust regular expression
-                // to find the verification link and capture the token from its `href` attribute.
+                // This line uses a Regular Expression to search the `htmlBody` string for our verification link
+                // and extract the unique token from it.
+                //
+                // - `htmlBody.match()`: This is a standard JavaScript string method. Its job is to search the `htmlBody`
+                //   string for a match against the provided regular expression.
+                //
+                //   - If it finds no match, it returns `null`.
+                //
+                //   - If it finds a match, it returns a special "Array-like" object containing the results.
+                //     For example, if the link is `.../verify-email/abc123token"`, the `match` object would be:
+                //     [
+                //       'href="http://localhost:3000/verify-email/abc123token"', // index 0: The full match
+                //       'abc123token',                                         // index 1: The first captured group
+                //       // ... plus other properties like 'index' and 'input'
+                //     ]
+                //     This structure is why we later access `match[1]` to get just the token.
+                //
+                // - `/.../`: These forward slashes are the delimiters that define a Regular Expression literal.
+                //
+                // - `href="http:\/\/localhost:3000\/verify-email\/`: This matches the literal, static
+                //   part of the URL. The `\` is an "escape character" that tells the regex engine to treat
+                //   the following `/` as a normal character, not the end of the regex.
+                //
+                // - `(`...`)`: This is the crucial "Capturing Group". It tells the regex engine to not only
+                //   match the pattern inside but to also capture and save the matched text as a separate result.
+                //
+                // - `[^"]+`: This is the pattern inside the capturing group. It means "match one or more (+)
+                //   characters that are NOT (^) a double quote (")".
+                //
+                // - `"`: Finally, the regex matches the literal closing double quote of the `href` attribute.
+                //
+                // In summary, the regex says: "Find the verification link, and capture all the characters
+                // that make up the token until you hit the closing quote."
                 const match = htmlBody.match(/href="http:\/\/localhost:3000\/verify-email\/([^"]+)"/);
 
+                // This `if` statement checks if our regular expression successfully found a match.
+                // The `.match()` method returns an array if successful, or `null` if not.
+                //
+                // `match?.[1]`: This is a combination of two JavaScript features:
+                // 1. `?.` (Optional Chaining): This safely checks if the `match` variable is not `null`
+                //    or `undefined`. If it is, the entire expression short-circuits to `undefined`
+                //    without causing an error.
+                // 2. `[1]`: If `match` exists, we then access its element at index 1. When a regex
+                //    with a capturing group `(...)` is successful, the array it returns contains:
+                //    - `match[0]`: The full string that was matched (e.g., `href="..."`).
+                //    - `match[1]`: The content of the first capturing group (the token itself).
+                //
+                // This condition is "truthy" only if a match was found AND it contained our captured token.
                 if (match?.[1]) {
 
-
+                    // If the condition is true, we have successfully extracted the token.
+                    // We assign the value of the captured group (`match[1]`) to our `verificationToken`
+                    // variable, which we declared earlier in the test.
                     verificationToken = match[1];
 
-
-                    console.log(`Verification token found: ${verificationToken}`);
-
-
+                    // This is a crucial command. The `break` statement immediately terminates the
+                    // `for` loop. Since we have found the token, there is no need to continue polling
+                    // the inbox.
                     break;
                 }
             }
 
-
+            // This line is the final step in each iteration of our polling loop.
+            // It creates a 2-second pause before the loop runs again. This prevents us from
+            // spamming the Mailtrap API with requests too quickly. The `await new Promise(...)`
+            // pattern is the standard way to create a delay in an `async` function.
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
-    
+        // This is a crucial assertion. It checks that our polling loop was successful.
+        // `expect(verificationToken, ...)`: We are asserting something about the `verificationToken` variable.
+        //
+        // The second argument, `"Could not find..."`, is a powerful feature of Playwright's `expect`.
+        // It provides a custom, human-readable error message that will be displayed in the test
+        // report if this specific assertion fails. This makes debugging much easier.
+        //
+        // `.not.toBeNull()`: This is a chained assertion.
+        // - `.not`: A "negator" that inverts the condition that follows.
+        // - `.toBeNull()`: A matcher that checks if a value is `null`.
+        // The entire expression reads: "Expect the `verificationToken` to NOT be `null`."
+        // If the loop timed out and the token was never found, this will fail the test immediately.
         expect(verificationToken, "Could not find verification token in Mailtrap inbox.").not.toBeNull();
 
-    
+        // Now that we have successfully extracted the token, this line simulates the user clicking the verification link.
+        // `await page.goto(...)`: Instructs the browser to navigate to a new URL.
+        // `` `/verify-email/${verificationToken}` ``: We use a "template literal" (backticks) to construct
+        // the dynamic verification URL by embedding our captured `verificationToken`.
         await page.goto(`/verify-email/${verificationToken}`);
 
-    
+        // This is another "wait" condition. After visiting the verification link, we expect the
+        // server to process the token and then redirect us back to the login page.
+        // `await page.waitForURL(...)`: This command tells Playwright to pause the test and wait
+        // until the browser's URL has changed to exactly match `/login?verified=true`. This
+        // confirms that the email verification was successful on the backend.
         await page.waitForURL("/login?verified=true");
 
-    
+        // Now that the user is verified and back on the login page, we can proceed with the login step.
+        // This line finds the email input field by its associated label and fills it with our unique test email.
         await page.getByLabel("Email").fill(uniqueEmail);
 
-
+        // This line finds the password input field by its associated label and fills it with our test password.
         await page.getByLabel("Password").fill(password);
 
-
+        // This line finds the login button by its accessible role and name and simulates a user click.
+        // This action submits the login form with the user's credentials.
         await page.getByRole("button", { name: "Login" }).click();
 
-    
+        // This is a "wait" condition that also acts as an assertion. We expect a successful login
+        // to redirect the user to their main dashboard. This command tells Playwright to pause
+        // the test and wait until the browser's URL changes to end with `/tasks`. If this
+        // redirect does not happen, the test will fail, indicating a problem with the login process.
         await page.waitForURL("/tasks");
 
-
+        // This is the final assertion for the successful login. It confirms that the correct
+        // content has been rendered on the tasks page.
+        // `page.getByRole("heading", ...)`: This locator finds the main heading element on the page.
+        // `name: \`Tasks for ${uniqueEmail}\``: We are using a template literal to construct the
+        // expected text of the heading, which should be personalized with the user's email.
+        // `.toBeVisible()`: This assertion checks that the heading with the correct text is actually
+        // visible on the screen, confirming a successful end-to-end login and page render.
         await expect(page.getByRole("heading", { name: `Tasks for ${uniqueEmail}` })).toBeVisible();
 
-    
+        // This begins the final step of the test: logging the user out.
+        // It finds the "Log Out" button by its accessible role and name and simulates a click.
         await page.getByRole("button", { name: "Log Out" }).click();
 
-
+        // This is the wait condition for the logout action. We expect that after logging out
+        // from a protected page, the application will redirect the user back to the login page.
+        // The `callbackUrl` is often added automatically by NextAuth.js to indicate the page the
+        // user was on before being logged out.
         await page.waitForURL("/login?callbackUrl=/tasks");
-
 
         // Now that we have navigated to the login page, we assert that the main
         // "Login" heading is visible. This confirms that we are on the correct page
