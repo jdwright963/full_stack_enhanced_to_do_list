@@ -84,7 +84,7 @@ jobs:
         run: |
           npm ci
           npm run dev &
-          sleep 10
+          sleep 20
 
       # This is the fourth and final step: executing the actual tests.
       - name: Run backend tests
