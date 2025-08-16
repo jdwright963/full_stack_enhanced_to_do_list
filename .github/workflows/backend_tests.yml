@@ -84,7 +84,7 @@ jobs:
           # EDIT!!!
         run: |
           npm ci
-          npm run dev
+          npm run dev > next_server.log 2>&1 &
           sleep 20
 
 
