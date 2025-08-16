@@ -81,14 +81,15 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
+          # EDIT!!!
         run: |
           npm ci
-          npm run dev > next_server.log 2>&1 &
+          npm run dev
           sleep 20
 
 
-      - name: Print Next.js server logs
-        run: cat next_server.log
+      # - name: Print Next.js server logs
+      #   run: cat next_server.log
 
       # - name: Health check Next.js server
       #   run: |
