@@ -84,6 +84,7 @@ jobs:
           # EDIT!!!
         run: |
           npm ci
+          npx prisma migrate deploy
           npm run dev > next_server.log 2>&1 &
           sleep 20
 
@@ -117,3 +118,11 @@ jobs:
         run: |
           source venv/bin/activate
           pytest tests_api/
+
+      
+      # EDIT!!!
+      - name: Display server logs on failure
+        if: always()
+        run: |
+          echo "--- Displaying Next.js server logs after test execution ---"
+          cat next_server.log
