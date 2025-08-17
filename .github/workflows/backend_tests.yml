@@ -10,7 +10,7 @@ name: Backend Tests
 # The 'on' key specifies the events that will trigger this workflow to run.
 # `[push, pull_request]` means this workflow will automatically execute whenever:
 #  1. Code is pushed to any branch in the repository.
-#  2. A pull request is created or updated.
+#  2. A pull request is created or updated
 # This is a standard CI practice to ensure code quality is checked on every change.
 on: [push, pull_request]
 
