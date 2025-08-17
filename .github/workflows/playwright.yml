@@ -87,7 +87,7 @@ jobs:
         #   secret in the GitHub UI.
         #
         # This entire block securely injects the values from the GitHub Secrets into the
-        # virtual machine's environment just before the `run` commands are executed.
+        # virtual machine's environment just before the `run` commands are executed
         env:
           CI_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
