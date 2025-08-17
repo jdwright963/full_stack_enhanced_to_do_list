@@ -121,7 +121,6 @@ jobs:
         run: |
           npm ci
           export DATABASE_URL="${{ secrets.DATABASE_URL }}?schema=playwright_e2e"
-          rm -f .env.example
           npx playwright install --with-deps
           npx prisma migrate reset --force
           sleep 5
