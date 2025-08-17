@@ -122,6 +122,5 @@ jobs:
           npm ci
           npx playwright install --with-deps
           npx prisma migrate reset --force
-          npm run dev &
           sleep 5
           npx playwright test
