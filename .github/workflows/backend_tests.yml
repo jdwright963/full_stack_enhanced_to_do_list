@@ -67,7 +67,26 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
          
-      # EDIT !!!
+      #  The purpose of this `env` block is to securely provide all the necessary secret environment
+      # variables to the commands that will be executed in the `run` step below.
+      #
+      # Without this, the application would fail to start because it wouldn't be able to connect
+      # to the database or initialize the authentication system.
+      #
+      # SYNTAX BREAKDOWN: KEY: $`{{ secrets.VALUE }}`
+      #
+      # - `KEY:` (e.g., `CI_DATABASE_URL:`): This is the name of the environment variable as the
+      #   application expects to find it (e.g., via `process.env.CI_DATABASE_URL`).
+      #
+      # - $`{{ ... }}`: This is the special syntax used in GitHub Actions to access context
+      #   and expression information.
+      #
+      # - `secrets.VALUE`: This is how we access the encrypted secrets that are stored in the
+      #   repository's settings. The `VALUE` part must exactly match the name we gave the
+      #   secret in the GitHub UI.
+      #
+      # This entire block securely injects the values from the GitHub Secrets into the
+      # virtual machine's environment just before the `run` commands are executed
       - name: Start Next.js server
         env:
           CI_DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -81,21 +100,73 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
-          # EDIT!!
-          # Wipe the database, create a fresh schema, and apply all migrations.
-          # The --force flag is required for non-interactive environments like CI.
+        # This multi-line script prepares the full testing environment and starts the application server.
+        # It executes the following commands in sequence:
+        # 1. `export DATABASE_URL...`: This is a critical step for preventing CI race conditions. It constructs
+        #    the final database connection string by taking the base URL directly from the GitHub secret
+        #    and appending a unique schema name (`?schema=backend_tests`). This ensures that this job's database
+        #    is completely isolated from other parallel jobs, like the Playwright E2E tests.
+        # 2. `npm ci`: ("Clean Install") This command installs the exact Node.js dependencies specified in the
+        #    `package-lock.json` file, ensuring a reproducible environment for every workflow run.
+        # 3. `npx prisma migrate reset --force`: This command completely wipes the isolated database schema
+        #    and applies all migrations from scratch. This guarantees that the tests always run against a
+        #    clean, predictable, and up-to-date database schema.
+        # 4. `npm run dev > next_server.log 2>&1 &`: This command starts the Next.js development server.
+        #    The `>` redirects all standard output and `2>&1` redirects all error output to the `next_server.log`
+        #    file for later debugging. The `&` at the end runs the server as a background process, allowing
+        #    the workflow to proceed to the next steps while the server is running.
         run: |
           export DATABASE_URL="${{ secrets.DATABASE_URL }}?schema=backend_tests"
           npm ci
           npx prisma migrate reset --force
           npm run dev > next_server.log 2>&1 &
-          sleep 25
 
-
-      - name: Print Next.js server logs
-        run: cat next_server.log
-
+      # This step acts as an "intelligent wait", ensuring the tests do not start until the server is fully running.
       - name: Health check Next.js server
+        
+        # This runs a multi line shell script that is a robust polling mechanism that tries to connect to the server in a loop.
+        # It is designed to be the intelligent wait mechanism that ensures the server is fully ready before tests begin.
+        #
+        # `for i in {1..10}; do ... done`
+        # This is a standard shell loop that will execute the code between `do` and `done` a maximum of 10 times.
+        # It acts as a timeout mechanism, giving the server a total of 20 seconds (10 attempts * 2 seconds) to start.
+        #
+        # `if curl ...; then ... fi`
+        # This is a conditional statement. It executes the `curl` command and checks its exit code. If the exit
+        # code is 0 (success), it runs the code inside the `then` block. Otherwise, it continues the loop.
+        #
+        # `curl -sSf http://localhost:3000 > /dev/null`
+        # This is the core of the health check.
+        #   - `curl`: A command-line tool to make web requests. Here, it makes a GET request.
+        #   - `-s`: The "silent" flag. It prevents curl from showing a progress meter or other informational
+        #     output. We only care about the result, not the process.
+        #   - `-S`: The "show error" flag. It is paired with `-s`. It tells curl that if a system-level
+        #     error occurs (e.g., "cannot resolve host"), it should still print that error to the console.
+        #   - `-f`: The "fail fast" or "fail on server error" flag. This is the MOST CRITICAL flag.
+        #     Normally, if a server responds with an error like 404 (Not Found) or 500 (Internal Server Error),
+        #     `curl` would still exit with a success code `0`. The `-f` flag changes this behavior: if the server
+        #     responds with an HTTP error code, `curl` will immediately exit with a failure code `22`.
+        #     This is what makes the `if` statement work correctly.
+        #   - `http://localhost:3000`: The URL being checked. This is the default address for the Next.js dev server.
+        #   - `> /dev/null`: This redirects the standard output (the actual HTML of the page) to `/dev/null`,
+        #     a special file that discards whatever is sent to it. We don't need to see the page content,
+        #     we only care that the request was successful.
+        #
+        # `echo "Next.js server is up!"` and `exit 0`
+        # If the `curl` command succeeds, this code runs. It prints a success message to the log and then
+        # immediately terminates the entire step with an exit code of `0`, which signifies success.
+        #
+        # `sleep 2`
+        # If the `curl` command fails, the script waits for 2 seconds before starting the next iteration of the loop.
+        # This prevents it from spamming the server with requests and gives the server more time to start.
+        #
+        # The code block after `done`
+        # This code only runs if the `for` loop completes all 10 attempts without a single successful `curl` command.
+        #   - `echo "Next.js server failed to start."`: Prints a clear error message.
+        #   - `cat next_server.log`: Displays the entire log file from the server, which is essential for
+        #     debugging why it failed to start.
+        #   - `exit 1`: Terminates the entire step with an exit code of `1`, which signifies failure and will
+        #     cause the entire GitHub Actions job to fail.
         run: |
           for i in {1..10}; do
             if curl -sSf http://localhost:3000 > /dev/null; then
@@ -110,22 +181,38 @@ jobs:
           exit 1
 
 
-      # This is the fourth and final step: executing the actual tests.
+      # This step executes the backend API tests using the Pytest framework.
       - name: Run backend tests
 
-        # This step also runs a multi-line shell script.
-        # We re-activate the virtual environment to ensure we're using the correct `pytest` executable we just installed.
-        # This command runs the `pytest` test runner.
-        # `qa-backend-tests/` tells pytest to look inside this directory for any test files (like `test_api.py`) and run them.
-        # If any test fails, pytest will exit with a non-zero status code, which causes this step and the entire job to fail.
+        # This `run` block executes two commands in a new shell session:
+        # 1. `source venv/bin/activate`: This command re-activates the Python virtual environment.
+        #    It's necessary to run this again because each `run` step in a GitHub Actions workflow
+        #    is a completely separate and isolated shell session. The activation from the
+        #    "Install dependencies" step does not persist to this one. Re-activating ensures that
+        #    the `pytest` command uses the correct dependencies that were installed inside `venv`.
+        #
+        # 2. `pytest tests_api/`: This command runs the Pytest test runner. It looks for all test
+        #    files in the `tests_api/` directory and executes them. If any test assertion fails,
+        #    Pytest will exit with an error code, which automatically fails this step and the entire
+        #    workflow job.
         run: |
           source venv/bin/activate
           pytest tests_api/
 
-      
-      # EDIT!!!
+      # This step is a crucial debugging tool that runs unconditionally at the end of the job.
+      # This allows us to see the server's logs to diagnose the cause of any potential 
+      # failures, or to review the server's state on a successful run.
       - name: Display server logs on failure
+
+        # This condition ensures this step will execute regardless of whether the
+        # previous steps succeeded or failed.
         if: always()
+
+        # This script prints the full server logs to the workflow output for debugging purposes.
+        # The `echo` command adds a clear, human-readable header to the GitHub Actions log,
+        # making this specific section easy to find. The `cat next_server.log` command then
+        # reads the entire contents of the log file (which captured all output from the
+        # `npm run dev` process) and displays it directly in the workflow's output.
         run: |
           echo "--- Displaying Next.js server logs after test execution ---"
           cat next_server.log
