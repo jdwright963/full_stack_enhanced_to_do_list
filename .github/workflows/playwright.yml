@@ -67,17 +67,16 @@ jobs:
       # responsible for installing all dependencies and then executing the Playwright tests.
       - name: Install deps & run Playwright tests
 
-        #  This `env` block is the most critical part of the entire test setup. Its purpose is to
-        # securely provide all the necessary secret environment variables to the commands that
-        # will be executed in the `run` step below.
+        #  The purpose of this `env` block is to securely provide all the necessary secret environment
+        # variables to the commands that will be executed in the `run` step below.
         #
         # Without this, the application would fail to start because it wouldn't be able to connect
         # to the database or initialize the authentication system.
         #
         # SYNTAX BREAKDOWN: KEY: $`{{ secrets.VALUE }}`
         #
-        # - `KEY:` (e.g., `DATABASE_URL:`): This is the name of the environment variable as the
-        #   application expects to find it (e.g., via `process.env.DATABASE_URL`).
+        # - `KEY:` (e.g., `CI_DATABASE_URL:`): This is the name of the environment variable as the
+        #   application expects to find it (e.g., via `process.env.CI_DATABASE_URL`).
         #
         # - $`{{ ... }}`: This is the special syntax used in GitHub Actions to access context
         #   and expression information.
@@ -87,9 +86,9 @@ jobs:
         #   secret in the GitHub UI.
         #
         # This entire block securely injects the values from the GitHub Secrets into the
-        # virtual machine's environment just before the `run` commands are executed.
+        # virtual machine's environment just before the `run` commands are executed
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CI_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
@@ -101,23 +100,30 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          AUTH_DISCORD_ID: ${{ secrets.AUTH_DISCORD_ID }}
+          AUTH_DISCORD_SECRET: ${{ secrets.AUTH_DISCORD_SECRET }}
 
-        # The `run` keyword executes all the following lines as shell commands in sequence.
+
+        # The `run` keyword executes the following shell commands in sequence.
         # 1. `npm ci`: ("Clean Install") Installs the exact project dependencies from the `package-lock.json`
-        #    file. This is the standard, reproducible way to install packages in a CI environment.
-        # 2. `npx playwright install --with-deps`: Installs the browser binaries (Chromium, etc.) that
-        #    Playwright needs, and the `--with-deps` flag also installs required OS-level dependencies
+        #    file, which is the standard, reproducible way to install packages in a CI environment.
+        # 2. `export DATABASE_URL...`: This is a critical step for preventing CI race conditions. It constructs
+        #    the final database connection string using a unique schema for this job (`playwright_e2e`). This
+        #    ensures that parallel jobs (like backend tests) have isolated databases and do not interfere with each other.
+        # 3. `npx playwright install --with-deps`: This command installs the browser binaries (Chromium, etc.)
+        #    that Playwright needs to run, and the `--with-deps` flag also installs required OS-level dependencies
         #    for running browsers on a headless Linux server.
-        # 3. `npm run dev &`: Starts the Next.js development server. The `&` at the end is crucial. It runs
-        #    the server in the background so the script can continue to the next command.
-        # 4. `sleep 5`: Pauses the script for 5 seconds. This gives the development server a moment
-        #    to start up and become ready to accept connections before the tests begin.
-        # 5. `npx playwright test`: The final command that executes the Playwright test runner. It will
-        #    run all tests found in the `e2e` directory against the now-running application. If any
-        #    test fails, this command will exit with an error, failing the entire workflow.
+        # 4. `npx prisma migrate reset --force`: This command completely wipes the isolated database schema
+        #    and applies all migrations from scratch, guaranteeing every test run starts with a clean, predictable state.
+        # 5. `npx playwright test`: This is the final and most important command. It intelligently does the following:
+        #    a) It automatically starts the Next.js server by running the command specified in the `webServer`
+        #       block of the `playwright.config.ts` file.
+        #    b) It waits for the server to be fully ready to accept connections before proceeding.
+        #    c) It runs all the E2E tests against the live server in the mode defined in the config (headless for CI).
+        #    d) It automatically shuts down the server once all tests are complete.
         run: |
           npm ci
+          export DATABASE_URL="${{ secrets.DATABASE_URL }}?schema=playwright_e2e"
           npx playwright install --with-deps
-          npm run dev &
-          sleep 5
+          npx prisma migrate reset --force
           npx playwright test
