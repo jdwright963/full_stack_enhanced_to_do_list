@@ -1,11 +1,9 @@
-
-# --- Purpose of this file ---
 # This YAML file defines a GitHub Actions "workflow". A workflow is an automated process that
-# runs one or more "jobs" whenever a specified event occurs in your repository.
-# This specific workflow is designed to automatically run your backend tests.
+# runs one or more "jobs" whenever a specified event occurs in the repository.
+# This specific workflow is designed to automatically run the backend tests.
 
 # The 'name' key sets the display name for this entire workflow.
-# This is the name you will see in the "Actions" tab of your GitHub repository,
+# This is the name you will see in the "Actions" tab of the GitHub repository,
 # making it easy to identify among other potential workflows (e.g., "Deploy to Production").
 name: Backend Tests
 
@@ -35,22 +33,22 @@ jobs:
 
       # The hyphen `-` indicates a list item, making this the first step.
       # The `uses` keyword tells this step to run a pre-built, reusable community action.
-      # `actions/checkout@v3` is a critical official action that checks out your repository's code
-      # and downloads it onto the runner, so your workflow can access your files (like your test scripts).
+      # `actions/checkout@v3` is a critical official action that checks out the repository's code
+      # and downloads it onto the runner, so the workflow can access the files (like test scripts).
       # The `@v3` pins it to a specific major version for stability and security.
       - uses: actions/checkout@v3
 
       # This is the second step in the job, clearly labeled 'Set up Python'.
       - name: Set up Python
 
-        # It uses the official `setup-python` action to install a specific Python version onto the runner.
+        # It uses the official `setup-python` action to install Python onto the runner.
         uses: actions/setup-python@v4
 
         # The 'with' block provides input parameters to the action being used.
         with:
 
           # This input tells the action to install and make Python version 3.11 available in the environment.
-          # This ensures that your tests always run against the same version of Python for consistency.
+          # This ensures that the tests always run against the same version of Python for consistency.
           python-version: 3.11
 
       # This is the third step, responsible for installing the necessary Python packages.
@@ -63,12 +61,54 @@ jobs:
         # The second command activates the virtual environment we just created.
         # Any subsequent `pip` or `python` commands will now use the environment inside the 'venv' folder.
         # The third command uses pip (Python's package installer) to install all libraries listed in the `requirements.txt` file.
-        # This file should contain `pytest` and `requests` for your tests to work.
+        # This file should contain `pytest` and `requests` for the tests to work.
         run: |
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
-          
+         
+      # EDIT !!!
+      - name: Start Next.js server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_DISCORD_ID: ${{ secrets.AUTH_DISCORD_ID }}
+          AUTH_DISCORD_SECRET: ${{ secrets.AUTH_DISCORD_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+          # EDIT!!!
+          # Wipe the database, create a fresh schema, and apply all migrations.
+          # The --force flag is required for non-interactive environments like CI.
+        run: |
+          npm ci
+          npx prisma migrate reset --force
+          npm run dev > next_server.log 2>&1 &
+          sleep 25
+
+
+      - name: Print Next.js server logs
+        run: cat next_server.log
+
+      - name: Health check Next.js server
+        run: |
+          for i in {1..10}; do
+            if curl -sSf http://localhost:3000 > /dev/null; then
+              echo "Next.js server is up!"
+              exit 0
+            fi
+            echo "Waiting for Next.js server..."
+            sleep 2
+          done
+          echo "Next.js server failed to start."
+          cat next_server.log
+          exit 1
+
+
       # This is the fourth and final step: executing the actual tests.
       - name: Run backend tests
 
@@ -80,3 +120,11 @@ jobs:
         run: |
           source venv/bin/activate
           pytest tests_api/
+
+      
+      # EDIT!!!
+      - name: Display server logs on failure
+        if: always()
+        run: |
+          echo "--- Displaying Next.js server logs after test execution ---"
+          cat next_server.log

@@ -47,10 +47,9 @@ export function AuthStatus() {
 
     // This `div` serves as the main container for the component's UI.
     // The `className` uses Tailwind CSS utilities to style it:
-    // - `flex`: This is the key to the layout. It sets `display: flex`, which enables "Flexbox".
-    //   Flexbox is a modern CSS layout model designed for arranging items in a single dimension,
-    //   either a row (default) or a column. When you apply `display: flex` to a container, you "unlock"
-    //   a powerful set of alignment properties for its direct children.
+    //  - `flex`: This sets `display: flex`, which enables the "Flexbox" layout model for the form's 
+    // direct children. By default, Flexbox arranges items in a horizontal row. This unlocks 
+    // a powerful set of alignment properties for the elements direct children.
     // - `justify-end`: A Flexbox property that aligns the content to the far right (end) of the container.
     // - `p-4`: Adds padding of `1rem` on all sides.
     // - `border-b`: Adds a 1px border to the bottom of the element.

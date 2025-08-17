@@ -1,4 +1,3 @@
-// --- Purpose of this file ---
 // This is the main configuration file for Playwright. The Playwright test runner reads this
 // file before executing any tests to understand how they should be run, where to find them,
 // what browser settings to use, and other important parameters.
@@ -9,26 +8,54 @@
 import { defineConfig } from '@playwright/test';
 
 // We export this configuration object as the default export of this file.
-// `defineConfig` is a wrapper around our configuration object for the type-safety benefits mentioned above.
-// defineConfig is a very simple function. It takes one argument (your configuration object) and immediately
-// returns it without changing it. This is known as an "identity function".
-// It tells TypeScript about the object. The function is typed to expect an object that perfectly matches the 
-// shape of a valid Playwright configuration (PlaywrightTestConfig). We are essentially asking TypeScript to 
-// validate our object against Playwright's official blueprint.
+//
+// The `defineConfig` function is a helper whose only purpose is to provide TypeScript
+// type-safety for your configuration. Think of it as an "official blueprint checker".
+//
+// 1. You provide it with your configuration object.
+// 2. Internally, `defineConfig` is typed to only accept an object that perfectly matches
+//    Playwright's official configuration shape (`PlaywrightTestConfig`).
+// 3. As you type, TypeScript (and your code editor) will check your object against this
+//    "blueprint", giving you autocompletion and instantly flagging any typos or invalid properties.
+//
+// At runtime, `defineConfig` is an "identity function"—it does nothing to your object and
+// simply returns it as-is. Its entire value is in the development experience and preventing errors.
 export default defineConfig({
 
   // This property tells Playwright where to look for your test files.
   // `'./e2e'`: This is a relative path that means "look in the 'e2e' folder located
-  // in the same directory as this config file". This is why we renamed the folder to `e2e`.
+  // in the same directory as this config file".
   testDir: './e2e',
 
   // This sets a global timeout for each individual test.
-  // `30_000`: This is 30,000 milliseconds (30 seconds). The underscore `_` is a numeric separator
+  // `60_000`: This is 60,000 milliseconds (60 seconds). The underscore `_` is a numeric separator
   // in TypeScript/JavaScript that has no effect on the value but makes large numbers easier to read.
   // If a single test (from `test(...)` to its end) takes longer than 30 seconds, it will be marked as "timed out" and failed.
-  timeout: 30_000,
+  timeout: 60_000,
+
+  // `globalSetup`: This property tells Playwright to run a script before any tests are executed.
+  // It's the perfect place to prepare the test environment, such as cleaning and seeding a database.
+  //
+  // `'./e2e/global-setup.ts'`: We provide a relative path to our setup script. Playwright will
+  // execute this file once at the beginning of the entire test run, ensuring all tests
+  // start with a clean and predictable database state.
+  globalSetup: './e2e/global-setup.ts',
 
 
+  // `webServer`: This configuration block tells Playwright how to automatically
+  // start your web application's server before running the tests.
+  webServer: {
+
+    // This command tells Playwright to start the Next.js development server.
+    // The `-- --env-file .env.test` part is the crucial instruction to make
+    // the server load its environment variables from your test-specific file,
+    // ensuring it uses Mailtrap and the local test database.
+    command: 'cross-env NODE_ENV=test npm run dev',
+
+    // This is the URL that Playwright will wait for before it starts running tests.
+    // It must match the URL your application runs on.
+    url: 'http://localhost:3000',
+  },
 
   // The 'use' object is where you define global settings that apply to all tests.
   // These settings are passed down to every browser context Playwright creates.
@@ -43,6 +70,6 @@ export default defineConfig({
     // `true`: This is "headless" mode. The browser runs in the background without a visible window.
     // This is faster and essential for running tests in a non-graphical environment like a CI/CD server.
     // For local debugging, you would often change this to `false` to watch the test run.
-    headless: true,
+    headless: false,
   },
 });

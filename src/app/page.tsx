@@ -117,8 +117,9 @@ export default async function Home() {
       // The `className` styles this container:
       // - `mt-10`: Sets a large `margin-top` of `2.5rem` to create significant separation between
       //   the descriptive text and the action buttons.
-      // - `flex`: Sets `display: flex`. This enables a Flexbox layout, which by default places
-      //   its direct children (the two Links) side-by-side in a row.
+      // - `flex`: Enables a flexbox layout. Flexbox is a CSS layout model designed for arranging
+      //     items in a single dimension, either a row (default) or a column. It provides powerful
+      //     and flexible control over alignment, spacing, and ordering of elements.
       // - `gap-6`: A Flexbox/Grid property that sets a `gap` of `1.5rem` between the child elements.
       //   This is the modern, clean way to create space between items without using margins.
       }

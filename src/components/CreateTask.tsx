@@ -117,9 +117,9 @@ export function CreateTask() {
 
       // The `className` prop applies several Tailwind CSS utility classes to style the form's layout.
       //
-      // - `flex`: This is the most important class. It sets `display: flex`, which enables the
-      //   "Flexbox" layout model for the form's direct children (the `<input>` and `<button>`).
-      //   By default, Flexbox arranges items in a horizontal row.
+      //  - `flex`: This sets `display: flex`, which enables the "Flexbox" layout model for the form's 
+      // direct children. By default, Flexbox arranges items in a horizontal row. This unlocks 
+      // a powerful set of alignment properties for the elements direct children.
       //
       // - `gap-2`: This is a Flexbox property that creates a small, consistent space (`0.5rem`)
       //   between the child elements (the input and the button). This is the modern way to

@@ -1,4 +1,3 @@
-// --- Purpose of this file ---
 // This file contains an end-to-end (E2E) test for the main task management feature.
 // It simulates a real user's entire journey: adding, completing, and deleting a task,
 // verifying at each step that the UI behaves as expected.
@@ -17,15 +16,43 @@ import { test, expect } from "@playwright/test";
 //   - The `page` object itself is the primary tool for interacting with the web page, like a remote control for the browser.
 test("Task flow: add, toggle, delete", async ({ page }) => {
 
-  // This is the first action the test performs. `await` is used because network actions are asynchronous.
-  // `page.goto(...)`: Instructs the browser controlled by Playwright to navigate to the specified URL.
-  // In this case, it's the tasks page of your locally running application.
-  await page.goto("http://localhost:3000/tasks");
+  // Instructs the browser to navigate to the `/login` page. We use a relative URL here
+  // because the `baseURL` is configured in `playwright.config.ts`.
+  await page.goto("/login");
 
+  // This line finds the email input field and types the static test user's email into it.
+  // `page.getByLabel("Email")`: This is a robust, accessibility-focused "locator". It finds an
+  // `<input>` element that is associated with a `<label>` containing the exact text "Email".
+  // `.fill(...)`: This method simulates a user typing the provided string into the located input field.
+  await page.getByLabel("Email").fill("jdwright963@gmail.com"); 
+
+  // This line finds the password input field by its associated label and types in the password.
+  // IMPORTANT: The password here is the plain-text version. We are testing the user-facing
+  // login form, not interacting directly with the database hash.
+  await page.getByLabel("Password").fill("password123");     
+
+  // This line finds the login button and simulates a user click.
+  // `page.getByRole("button", { name: "Login" })`: This locator finds an element with the
+  // accessible role of "button" that has the exact name "Login".
+  // `.click()`: This method simulates a mouse click on the located element.
+  await page.getByRole("button", { name: "Login" }).click();
+
+  // This is a crucial "wait" condition. After clicking the login button, the application
+  // will perform a client-side navigation. This command tells Playwright to pause the test
+  // and wait until the browser's URL has changed to exactly match the `/tasks` path.
+  // This confirms that the login was successful and the redirect has completed before the
+  // test moves on to the next step.
+  await page.waitForURL("/tasks");
+
+  // Before we interact with the form, we must wait for the initial data
+  // loading to be complete. A robust way to do this is to find the "Loading..."
+  // text and wait for it to disappear from the page.
+  await expect(page.getByText("Loading tasks...")).not.toBeVisible({ timeout: 15000 });
+  
   // This is a "Locator". It's a recipe for finding an element on the page. It doesn't find it yet, just defines how.
   // `page.getByPlaceholder(...)`: A user-facing locator that finds an `<input>` element by its placeholder text.
   // This is a robust way to select elements because it's how a real user would identify them.
-  const input = page.getByPlaceholder("Add a task...");
+  const input = page.getByPlaceholder("Add a new task...");
 
   // This creates another locator, this time for the 'Add' button.
   // `page.getByRole("button", ...)`: Finds an element by its accessible role.

@@ -1,4 +1,3 @@
-# --- Purpose of this file ---
 # This YAML file defines a GitHub Actions "workflow" specifically for running your
 # frontend End-to-End (E2E) tests using Playwright. It automates the process of setting up
 # an environment, installing dependencies, starting your application, and running the tests.
@@ -17,7 +16,6 @@ on:
     # This is a crucial filter. It specifies that the `push` event will ONLY trigger
     # this workflow if the push is to the `main` branch. Pushes to other feature
     # branches (e.g., `my-new-feature`) will NOT run this workflow.
-    # This is often used to run tests on the primary branch after a merge.
     branches: [main]
 
   # This configures the workflow to run when a pull request event occurs.
@@ -25,12 +23,9 @@ on:
 
     # This is another filter. It specifies that the `pull_request` event will ONLY
     # trigger this workflow if the pull request's TARGET branch is `main`.
-    # This is a very common and important CI (Continuous Integration) practice. It means
-    # "before any code is allowed to merge into `main`, run all the E2E tests on it first".
     branches: [main]
 
 # The 'jobs' key defines one or more jobs that the workflow will execute.
-# A job is a set of steps that execute on the same runner.
 jobs:
 
   # This line defines a single job with the unique ID 'e2e'.
@@ -64,27 +59,62 @@ jobs:
         # The 'with' block is used to provide input parameters to the action specified in `uses`.
         with:
 
-          # This input tells the `setup-node` action to install Node.js version 18.
-          # Specifying a version ensures your tests run in the same environment as your development machine.
-          node-version: 18
+          # This input tells the `setup-node` action to install Node.js version 22.16.0.
+          # Specifying a version ensures your tests run in the same environment as the development machine.
+          node-version: 22.16.0
 
       # This is the third and final step of the job. It's a single, multi-line script block
       # responsible for installing all dependencies and then executing the Playwright tests.
       - name: Install deps & run Playwright tests
 
-      # The `run` keyword executes all the following lines as shell commands in sequence.
-      # 1. `npm ci`: ("Clean Install") Installs the exact project dependencies from the `package-lock.json`
-      #    file. This is the standard, reproducible way to install packages in a CI environment.
-      # 2. `npx playwright install --with-deps`: Installs the browser binaries (Chromium, etc.) that
-      #    Playwright needs, and the `--with-deps` flag also installs required OS-level dependencies
-      #    for running browsers on a headless Linux server.
-      # 3. `npm run dev &`: Starts the Next.js development server. The `&` at the end is crucial; it runs
-      #    the server in the background so the script can continue to the next command.
-      # 4. `sleep 5`: Pauses the script for 5 seconds. This gives the development server a moment
-      #    to start up and become ready to accept connections before the tests begin.
-      # 5. `npx playwright test`: The final command that executes the Playwright test runner. It will
-      #    run all tests found in the `e2e` directory against the now-running application. If any
-      #    test fails, this command will exit with an error, failing the entire workflow.
+        #  This `env` block is the most critical part of the entire test setup. Its purpose is to
+        # securely provide all the necessary secret environment variables to the commands that
+        # will be executed in the `run` step below.
+        #
+        # Without this, the application would fail to start because it wouldn't be able to connect
+        # to the database or initialize the authentication system.
+        #
+        # SYNTAX BREAKDOWN: KEY: $`{{ secrets.VALUE }}`
+        #
+        # - `KEY:` (e.g., `DATABASE_URL:`): This is the name of the environment variable as the
+        #   application expects to find it (e.g., via `process.env.DATABASE_URL`).
+        #
+        # - $`{{ ... }}`: This is the special syntax used in GitHub Actions to access context
+        #   and expression information.
+        #
+        # - `secrets.VALUE`: This is how we access the encrypted secrets that are stored in the
+        #   repository's settings. The `VALUE` part must exactly match the name we gave the
+        #   secret in the GitHub UI.
+        #
+        # This entire block securely injects the values from the GitHub Secrets into the
+        # virtual machine's environment just before the `run` commands are executed.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          MAILTRAP_API_TOKEN: ${{ secrets.MAILTRAP_API_TOKEN }}
+          MAILTRAP_INBOX_ID: ${{ secrets.MAILTRAP_INBOX_ID }}
+          MAILTRAP_ACCOUNT_ID: ${{ secrets.MAILTRAP_ACCOUNT_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+
+        # The `run` keyword executes all the following lines as shell commands in sequence.
+        # 1. `npm ci`: ("Clean Install") Installs the exact project dependencies from the `package-lock.json`
+        #    file. This is the standard, reproducible way to install packages in a CI environment.
+        # 2. `npx playwright install --with-deps`: Installs the browser binaries (Chromium, etc.) that
+        #    Playwright needs, and the `--with-deps` flag also installs required OS-level dependencies
+        #    for running browsers on a headless Linux server.
+        # 3. `npm run dev &`: Starts the Next.js development server. The `&` at the end is crucial. It runs
+        #    the server in the background so the script can continue to the next command.
+        # 4. `sleep 5`: Pauses the script for 5 seconds. This gives the development server a moment
+        #    to start up and become ready to accept connections before the tests begin.
+        # 5. `npx playwright test`: The final command that executes the Playwright test runner. It will
+        #    run all tests found in the `e2e` directory against the now-running application. If any
+        #    test fails, this command will exit with an error, failing the entire workflow.
         run: |
           npm ci
           npx playwright install --with-deps
