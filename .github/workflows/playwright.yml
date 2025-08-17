@@ -120,6 +120,7 @@ jobs:
         #    test fails, this command will exit with an error, failing the entire workflow.
         run: |
           npm ci
+          export DATABASE_URL="${{ secrets.DATABASE_URL }}?schema=playwright_e2e"
           npx playwright install --with-deps
           npx prisma migrate reset --force
           sleep 5
