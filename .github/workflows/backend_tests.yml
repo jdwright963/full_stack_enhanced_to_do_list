@@ -86,6 +86,7 @@ jobs:
           # The --force flag is required for non-interactive environments like CI.
         run: |
           export DATABASE_URL="${{ secrets.DATABASE_URL }}?schema=backend_tests"
+          rm -f .env.example
           npm ci
           npx prisma migrate reset --force
           npm run dev > next_server.log 2>&1 &
