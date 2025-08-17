@@ -81,7 +81,7 @@ jobs:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
-          # EDIT!!!
+          # EDIT!!
           # Wipe the database, create a fresh schema, and apply all migrations.
           # The --force flag is required for non-interactive environments like CI.
         run: |
