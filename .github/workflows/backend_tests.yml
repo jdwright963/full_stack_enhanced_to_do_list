@@ -82,9 +82,11 @@ jobs:
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
           # EDIT!!!
+          # Wipe the database, create a fresh schema, and apply all migrations.
+          # The --force flag is required for non-interactive environments like CI.
         run: |
           npm ci
-          npx prisma migrate deploy
+          npx prisma migrate reset --force
           npm run dev > next_server.log 2>&1 &
           sleep 20
 
