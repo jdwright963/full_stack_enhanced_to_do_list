@@ -76,8 +76,8 @@ jobs:
         #
         # SYNTAX BREAKDOWN: KEY: $`{{ secrets.VALUE }}`
         #
-        # - `KEY:` (e.g., `DATABASE_URL:`): This is the name of the environment variable as the
-        #   application expects to find it (e.g., via `process.env.DATABASE_URL`).
+        # - `KEY:` (e.g., `CI_DATABASE_URL:`): This is the name of the environment variable as the
+        #   application expects to find it (e.g., via `process.env.CI_DATABASE_URL`).
         #
         # - $`{{ ... }}`: This is the special syntax used in GitHub Actions to access context
         #   and expression information.
