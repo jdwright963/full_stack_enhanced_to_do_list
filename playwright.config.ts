@@ -70,6 +70,6 @@ export default defineConfig({
     // `true`: This is "headless" mode. The browser runs in the background without a visible window.
     // This is faster and essential for running tests in a non-graphical environment like a CI/CD server.
     // For local debugging, you would often change this to `false` to watch the test run.
-    headless: false,
+    headless: true,
   },
 });
