@@ -1,4 +1,4 @@
-// This file is the primary "root" router for your entire tRPC server. It acts as the
+// This file is the primary "root" router for the entire tRPC server. It acts as the
 // central hub or assembly point where all the modular, feature-specific routers
 // (e.g., `postRouter`, `taskRouter`) are combined into a single, unified API.
 
@@ -9,6 +9,9 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 // Imports the `taskRouter` we created. It contains all API procedures related to tasks.
 import { taskRouter } from "./routers/task";
+
+// Imports the `authRouter` we created. It contains all API procedures related to authentication.
+import { authRouter } from "./routers/auth";
 
 /**
  * This is the primary, or "root", router for your entire server.
@@ -25,10 +28,10 @@ import { taskRouter } from "./routers/task";
 // this router to process all incoming API requests from the client.
 export const appRouter = createTRPCRouter({
 
-  // This merges the `taskRouter` into the main `appRouter` under the `task` namespace.
+  // This merges the `taskRouter` and `authRouter` into the main `appRouter` under the `task` and `auth` namespaces.
   // Frontend access will look like `api.task.getAll`, `api.task.create`, etc.
   task: taskRouter,
-
+  auth: authRouter,
 });
 
 // This is the important line for type-safety.

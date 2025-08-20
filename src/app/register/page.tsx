@@ -6,6 +6,16 @@
 // which can only happen on the client side.
 "use client";
 
+// Imports the main, type-safe tRPC client object from our central client-side setup file.
+//
+// The `api` object is the single entry point for all client-server communication. It is a
+// comprehensive object created by the `createTRPCReact` factory (in `~/trpc/react.tsx`)
+// that is fully aware of our backend's `AppRouter` shape.
+//
+// This object provides all the auto-generated React Query hooks that we use to fetch and
+// mutate data, such as `api.auth.register.useMutation()`.
+import { api } from "~/trpc/react"
+
 // Imports the `useState` hook from the React library. This is a fundamental hook that allows
 // function components to have "state" which are variables whose changes will cause the component to
 // re-render and update the UI. We will use it to store the user's input for email and password,
@@ -58,6 +68,14 @@ export default function RegisterPage() {
   //    - `setIsLoading`: This is the function we'll call to change the loading state and trigger
   //      a re-render to update the UI (e.g., disable the button and change its text).
   const [isLoading, setIsLoading] = useState(false);
+
+  // This line sets up the tRPC "mutation" for the registration process.
+  // `api.auth.register.useMutation()`: This is a tRPC React Query hook.
+  // - It does NOT execute the API call immediately.
+  // - Instead, it returns a `registerMutation` object that contains everything needed to manage
+  //   the lifecycle of the mutation, including a function to trigger it (`.mutateAsync()`) and
+  //   status flags like `.isLoading`.
+  const registerMutation = api.auth.register.useMutation();
 
   // This function is an event handler. Its purpose is to be executed every time a user
   // interacts with a form input. Specifically, it will be attached to the `onChange` prop of
@@ -148,63 +166,20 @@ export default function RegisterPage() {
     // that might fail, such as a network request. The code we expect to work goes in the `try` block.
     try {
 
-      // This line uses the standard browser `fetch` API to send a network request to our backend.
-      // `await`: This keyword pauses the execution of the `handleSubmit` function here until the
-      // server has responded. The `Response` object from the server is then stored in the `res` variable.
-      //
-      // Arguements:
-      // 1. The URL: `"/api/register"`
-      //    - This is a relative URL pointing to the server-side API endpoint that will handle
-      //      the user registration logic.
-      //    - In our Next.js project, this URL corresponds to the handler file located at
-      //      `src/app/api/register/route.ts`.
-      //
-      // 2. The `options` object: This configures the details of the request.
-      const res = await fetch("/api/register", {
+      // This is the core of the tRPC-based submission. We are now calling the mutation we set up earlier.
+      // `registerMutation.mutateAsync(formData)`:
+      // - `.mutateAsync()`: This is the function on our mutation object that actually triggers the API
+      //   call to the backend `auth.register` procedure. It returns a `Promise`.
+      // - `formData`: We pass our component's state object directly as the input. tRPC handles
+      //   serializing this data, and our Zod schema on the backend will automatically validate it.
+      // - `await`: This keyword pauses the execution of the `handleSubmit` function until the
+      //   Promise from `.mutateAsync()` has settled (either successfully resolved or rejected with an error).
+      //   If the backend procedure throws an error, this `await` will re-throw that error here,
+      //   which will be caught by the `catch` block.
+      await registerMutation.mutateAsync(formData);
 
-        // `method: "POST"`: We specify the HTTP method as POST. This is the standard method for sending
-        // data to a server to create a new resource (in this case, a new user account).
-        method: "POST",
-
-        // `headers`: This object provides metadata about our request.
-        headers: {
-
-          // `"Content-Type": "application/json"`: This header is essential. It tells the server that the
-          // data we are sending in the `body` of this request is formatted as a JSON string.
-          // The server will use this information to parse the body correctly.
-          "Content-Type": "application/json",
-        },
-
-        // `body`: This contains the actual data payload we are sending to the server.
-        // `JSON.stringify(formData)`: We take our `formData` state object (which contains the
-        // user's email and password) and serialize it into a JSON string (e.g., `'{"email":"...","password":"..."}'`).
-        body: JSON.stringify(formData),
-      });
-
-      // After receiving the initial response, we need to read and parse its body content.
-      // `await res.json()`: This is an asynchronous method that takes the response stream from the server
-      // and parses it as JSON. The `await` keyword pauses execution until this parsing is complete.
-      // The resulting JavaScript object (e.g., `{ message: 'User created' }` or `{ error: 'Email already exists' }`)
-      // is stored in the `data` variable.
-      const data = await res.json();
-
-      // This is a critical check for the success of the HTTP request itself.
-      // `res.ok` is a boolean property on the response object that is `true` only if the HTTP status
-      // code was in the successful range (200-299). It will be `false` for client or server errors (4xx, 5xx).
-      if (!res.ok) {
-
-        // If the response was not successful (e.g., the server returned a 400 Bad Request error because
-        // the email was already in use), we `throw new Error`. This immediately stops the execution
-        // of the `try` block and transfers control to the `catch` block below.
-        // `data.error || "Something went wrong"`: This constructs the error message. We first try to use
-        // the specific error message sent from our backend in the `data.error` property. If that
-        // doesn't exist for some reason, we use a generic fallback message.
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      // If the code reaches this point, it means `res.ok` was true and the user was successfully created on the backend.
-      // We use the `react-hot-toast` library to display a success notification pop-up to the user.
-      // This message clearly informs the user of the successful registration and tells them the next step.
+      // Since we are using `await`, the code below the line with `await` (such as this line) will ONLY execute
+      // if the mutation was successful.
       toast.success("Account created! Check your email to verify.");
 
       // After notifying the user, we programmatically navigate them to the login page.
@@ -212,17 +187,23 @@ export default function RegisterPage() {
       // browser to the `/login` route, where they can now attempt to sign in.
       router.push("/login");
 
-    // The `catch` block will execute if any error was thrown at any point inside the `try` block.
-    // This could be a network failure (e.g., the user is offline and `fetch` fails) or the
-    // explicit `throw new Error(...)` we triggered if the server responded with an error status.
-    // `error`: This variable contains the error object that was "caught". We are typing it as `any`
-    // for simplicity, as the type of thrown errors can be unpredictable.
-    } catch (error: any) {
+    // The `catch` block executes if any error was thrown inside the `try` block.
+    // The `error` variable, typed as `unknown` by default, contains the thrown value.
+    } catch (error) {
 
-      // `toast.error(error.message)`: We display an error notification toast to the user.
-      // We access the `.message` property of the `error` object (e.g., "Email already in use")
-      // to provide specific feedback about what went wrong.
-      toast.error(error.message);
+      // This is the modern, type-safe way to handle unknown errors. We first check if the
+      // `error` is a standard JavaScript `Error` object, which is guaranteed to have a `.message` property.
+      if (error instanceof Error) {
+
+        // If it's a standard Error (which tRPC errors are), we can safely access its `.message`
+        // property to display the specific error from the backend (e.g., "Email already in use").
+        toast.error(error.message);
+
+        // If the thrown value was something else (e.g., a string or a plain object), we display 
+        // a generic fallback message to the user.
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
 
     // The `finally` block is a special part of the `try...catch` statement.
     // The code inside `finally` will always be executed, regardless of whether the `try`

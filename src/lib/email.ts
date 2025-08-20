@@ -19,18 +19,20 @@ export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
 
   // `port`: The port number on the SMTP server for the connection.
-  // `parseInt(...)`: Environment variables are always read as strings. `parseInt` is used to
-  // convert the string value into an integer, which is the required type for the port number.
-  // `process.env.SMTP_PORT || "587"`: This is a robust pattern. It first tries to read the `SMTP_PORT`
-  // variable. If that variable is missing or empty, the logical OR (`||`) operator provides a
-  // default fallback value of "587".Port 587 is a very common port for modern email submission. It uses a protocol
-  // called STARTTLS (Start Transport Layer Security). Here's how it works:
-  // 1. The connection begins on a standard, unencrypted channel.
-  // 2. The email client explicitly requests ("starts") an upgrade to a secure TLS connection.
-  // 3. If the server supports it, the entire rest of the communication is encrypted.
-  // This opportunistic encryption model is why the `secure` option below is set to `false`,
-  // as the initial handshake is not secure, but it is immediately upgraded.
-  port: parseInt(process.env.SMTP_PORT || "587"),
+  // `parseInt(...)`: Environment variables are always read as strings, so `parseInt` is
+  // used to convert the value into an integer, which is the required type.
+  //
+  // `process.env.SMTP_PORT ?? "587"`: This is a robust pattern for providing a default value.
+  // - The "nullish coalescing operator" (`??`) checks if the value on its left
+  //   (`process.env.SMTP_PORT`) is either `null` or `undefined`.
+  // - If it is, the operator returns the fallback value on its right (`"587"`).
+  //   Port 587 is a very common port for modern email submission.
+  // - Otherwise, it returns the value from the environment variable.
+  //
+  // This is safer than the logical OR (`||`) because `||` would incorrectly use the
+  // fallback for any "falsy" string (like an empty string `""`), whereas `??`
+  // would correctly use the empty string if it were present.
+  port: parseInt(process.env.SMTP_PORT ?? "587"),
 
   // `secure`: A boolean that configures the connection's security protocol.
   // `false`: This is typically used for connections on port 587 that use STARTTLS. The connection
@@ -73,10 +75,9 @@ export async function sendVerificationEmail(email: string, token: string) {
   // It takes a single object that defines every aspect of the email to be sent.
   await transporter.sendMail({
 
-    // EDIT!!!
     // `from`: Specifies the sender's information using the standard `"Display Name" <email@address.com>` format.
     // The "Display Name" (e.g., `"No Reply"`) is the name the recipient sees in their inbox.
-    // The actual sending address (`<${process.env.SMTP_USER}>`) is dynamically inserted from the environment variables.
+    // The actual sending address (`<${process.env.EMAIL_FROM}>`) is dynamically inserted from the environment variables.
     // CRITICAL: For emails to be delivered reliably and avoid spam folders, this sending address MUST
     // be an address that is authorized and verified with the email service provider (e.g., Resend, SendGrid).
     from: `"No Reply" <${process.env.EMAIL_FROM}>`,

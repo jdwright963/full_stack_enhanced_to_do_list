@@ -277,8 +277,8 @@ test.describe("Authentication Flow", () => {
         await expect(page.getByRole("heading", { name: `Tasks for ${uniqueEmail}` })).toBeVisible();
 
         // This begins the final step of the test: logging the user out.
-        // It finds the "Log Out" button by its accessible role and name and simulates a click.
-        await page.getByRole("button", { name: "Log Out" }).click();
+        // It finds the "Sign Out" button by its accessible role and name and simulates a click.
+        await page.getByRole("button", { name: "Sign Out" }).click();
 
         // This is the wait condition for the logout action. We expect that after logging out
         // from a protected page, the application will redirect the user back to the login page.

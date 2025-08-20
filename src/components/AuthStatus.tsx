@@ -86,23 +86,36 @@ export function AuthStatus() {
           <span>Welcome, {session.user.email}</span>
 
           {/* This renders a clickable "Sign Out" button. */}
-          {/* `onClick={() => signOut()}`: This is the event handler. */}
-          {/* - `onClick`: Specifies the function to run when this button is clicked. */}
-          {/* - `() => signOut()`: This is an "anonymous arrow function". When the button is clicked, this */}
-          {/* arrow function is executed. Its only job is to then call the `signOut` function that was */}
-          {/* imported from `next-auth/react`. This initiates the sign-out process. */}
-          <button onClick={() => signOut()}>Sign Out</button>
+          {/* `onClick={() => signOut()}`: This is the event handler. When the button is clicked, this */}
+          {/* anonymous arrow function is executed, which then calls the `signOut` function */}
+          {/* imported from `next-auth/react` to initiate the sign-out process. */}
+          
+          {/* - `bg-red-600`: Sets the background color to a shade of red, a common UI convention for a "log out" or destructive action. */}
+          {/* - `text-white`: Sets the text color to white for high contrast. */}
+          {/* - `px-1 py-1`: Sets horizontal (`x`) and vertical (`y`) padding to control the button's size. */}
+          {/* - `rounded`: Applies a default border-radius for slightly rounded corners. */}
+          {/* - `hover:bg-red-700`: A "state variant" that applies a slightly darker red background only when the user's mouse is hovering over the button, providing interactive feedback. */}
+          {/* - `transition`: Adds a smooth transition effect to all property changes (like the background color on hover). */}
+          <button onClick={() => signOut()} className="bg-red-600 text-white px-1 py-1 rounded hover:bg-red-700 transition">
+            Sign Out</button>
         </div>
 
       // The `:` separates the "true" case from the "false" case in the ternary operator.
       ) : (
 
-        // This is rendered if the user is not logged in.
-        // This renders a single, clickable "Sign In" button.
-        // `onClick={() => signIn()}`: This event handler works just like the sign-out button.
-        // When clicked, the anonymous arrow function calls the `signIn` function imported from `next-auth/react`.
-        // This will redirect the user to the login page.
-        <button onClick={() => signIn()}>Sign In</button>
+        // This button is rendered if the user is NOT logged in.
+        // It provides a clear "Sign In" action in the application's header.
+        // `onClick={() => signIn()}`: This event handler calls the `signIn` function when clicked,
+        // which will redirect the user to the `/login` page.
+        //  
+        // - `bg-blue-600`: Sets the background color to a shade of blue, a common UI convention for a primary, positive action.
+        // - `text-white`: Sets the text color to white.
+        // - `px-1 py-1`: Sets horizontal and vertical padding.
+        // - `rounded`: Applies slightly rounded corners.
+        // - `hover:bg-blue-700`: A "state variant" that darkens the background on hover for interactive feedback.
+        // - `transition`: Adds a smooth transition effect to property changes.
+        <button onClick={() => signIn()} className="bg-blue-600 text-white px-1 py-1 rounded hover:bg-blue-700 transition">
+          Sign In</button>
       )}
     </div>
   );

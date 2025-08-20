@@ -23,11 +23,6 @@ import { CreateTask } from "~/components/CreateTask";
 // and render them as a list.
 import { TaskList } from "~/components/TaskList";   
 
-// Imports the `LogoutButton` component. This is a simple, self-contained
-// Client Component whose only purpose is to render a button that, when clicked, calls the
-// client-side `signOut` function from NextAuth.js to log the user out.
-import LogoutButton from "~/components/LogoutButton";
-
 // This line defines and exports the main React component for this page.
 // `export default`: The standard syntax that allows the Next.js App Router to find and
 // render this component for the `/tasks` route.
@@ -96,20 +91,6 @@ export default async function TasksPage() {
         {/* here because the guard clause `if (!session?.user)` earlier in the component guarantees it exists. */}
         Tasks for <span className="text-purple-400">{session.user.email}</span>
       </h1>
-
-      {/* This `div` acts as a container for the LogoutButton to control its alignment. */}
-      {/* - `mb-4`: Adds `margin-bottom: 1rem;` to create space between this button and the CreateTask form below it. */}
-      {/* - `flex`: This sets `display: flex`, which enables the "Flexbox" layout model for the form's */}
-      {/*    direct children. By default, Flexbox arranges items in a horizontal row. This unlocks */}
-      {/*    a powerful set of alignment properties for the elements direct children. */}
-      {/* - `justify-end`: A Flexbox property. Corresponds to `justify-content: flex-end;`, which pushes */}
-      {/*   its child items (the LogoutButton) all the way to the right side of the container. */}
-      <div className="mb-4 flex justify-end">
-
-        {/* This renders our imported `LogoutButton` component. It is a self-contained Client Component */}
-        {/* that handles the entire sign-out logic. It is "self-closing" (`/>`) because it doesn't wrap any other elements. */}
-        <LogoutButton />
-      </div>
 
       {/* This renders our imported `CreateTask` component. This Client Component contains the */}
       {/* input field and "Add" button for creating new tasks. */}
