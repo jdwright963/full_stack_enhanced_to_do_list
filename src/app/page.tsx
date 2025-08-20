@@ -90,10 +90,10 @@ export default async function Home() {
           to apply styles or behavior to a specific piece of text within a larger block.
           
           By placing "FocusTasks" inside this styled span, we can apply a different color
-          to it without affecting the "Welcome to " text. The `text-purple-400` class
+          to it without affecting the "Welcome to " text. The `text-bg-blue-600` class
           sets the text color for only this part of the heading, creating the branded highlight.
         */}
-        Welcome to <span className="text-purple-400">FocusTasks</span>
+        Welcome to <span className="text-blue-600">FocusTasks</span>
       </h1>
 
       {// This renders the descriptive paragraph or "tagline" below the main heading.
@@ -154,13 +154,13 @@ export default async function Home() {
 
           // The `className` styles the link to visually appear as a large, primary button.
           // - `rounded`: Applies a default `border-radius` for rounded corners.
-          // - `bg-purple-600`: Sets the background color to the site's primary brand color (purple).
+          // - `bg-blue-600`: Sets the background color to the site's primary brand color (blue).
           // - `px-6 py-3`: Sets horizontal and vertical padding to control the button's size.
           // - `text-lg font-semibold`: Makes the text large and semi-bold.
-          // - `hover:bg-purple-700`: A "state variant". It applies a slightly darker background color
+          // - `hover:bg-blue-700`: A "state variant". It applies a slightly darker background color
           //   only when the user's mouse is hovering over the link, providing interactive feedback.
           // - `transition`: Adds a smooth transition effect to all property changes (like the background color on hover).
-          className="rounded bg-purple-600 px-6 py-3 text-lg font-semibold hover:bg-purple-700 transition"
+          className="rounded bg-blue-600 px-6 py-3 text-lg font-semibold hover:bg-blue-700 transition"
         >
 
           {/* This is the visible text content of the link/button. */}
