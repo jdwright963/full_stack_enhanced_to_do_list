@@ -217,9 +217,12 @@ export function CreateTask() {
         // - `px-3 py-1`: Sets the horizontal and vertical padding to control the button's size.
         // - `rounded`: Applies a `border-radius` for slightly rounded corners.
         // - `disabled:opacity-50`: This is a special "state variant" in Tailwind. It applies an
-        //   opacity of 50% *only when* the button is in a `disabled` state. This visually
+        //   opacity of 50% only when the button is in a `disabled` state. This visually
         //   "grays out" the button, clearly indicating to the user that it is temporarily inactive.
-        className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-50"
+        // - `hover:bg-blue-700`: A "state variant". It applies a slightly darker background color
+        //   only when the user's mouse is hovering over the link, providing interactive feedback.
+        // - `transition`: Adds a smooth transition effect to all property changes (like the background color on hover).
+        className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-50 hover:bg-blue-700 transition"
 
         // `disabled={createTask.isPending}`: Just like with the input, we are dynamically disabling
         // the button based on the mutation's `isPending` status. This is a crucial feature to

@@ -83,13 +83,8 @@ export default async function TasksPage() {
       }
       <h1 className="text-2xl font-bold mb-4">
 
-        {/* This static text is the first part of the heading. The trailing space is important for visual separation. */}
-        {/* This `<span>` is an inline element used to apply a different style to the user's email. */}
-        {/* - `text-purple-400`: Sets the text color to a specific shade of purple from the Tailwind theme, */}
-        {/*   creating a branded highlight for the dynamic user data. */}
-        {/* `{session.user.email}`: This embeds the user's email directly into the heading. It is safe to access `session.user` */}
-        {/* here because the guard clause `if (!session?.user)` earlier in the component guarantees it exists. */}
-        Tasks for <span className="text-purple-400">{session.user.email}</span>
+        {/* This is the static text of the heading.*/}
+        Task List:
       </h1>
 
       {/* This renders our imported `CreateTask` component. This Client Component contains the */}
