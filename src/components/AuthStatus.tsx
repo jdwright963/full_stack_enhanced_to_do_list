@@ -42,6 +42,9 @@ export function AuthStatus() {
   // The `session` constant will be the full session object if the user is logged in, or `null` if they are not.
   const { data: session } = useSession();
 
+  // Only render if the user is signed in
+  if (!session?.user) return null;
+
   // The `return` statement defines the JSX that this component will render.
   return (
 
@@ -55,18 +58,7 @@ export function AuthStatus() {
     // - `border-b`: Adds a 1px border to the bottom of the element.
     <div className="flex justify-end p-4 border-b">
 
-      {/* This is a "ternary operator", the standard way to do conditional rendering in JSX. */}
-      {/* It checks a condition and renders one of two different pieces of UI based on the result. */}
-      {/*
-        The Condition: `session?.user`
-        - `session?`: This is "optional chaining". It safely checks if the `session` object exists.
-          If `session` is `null` or `undefined`, the entire expression immediately evaluates to `undefined`
-          (which is "falsy") without causing an error.
-        - `.user`: If `session` does exist, it then accesses the `user` property.
-        - The entire condition is "truthy" if the user is logged in, and "falsy" if they are not.
-      */}
-      {session?.user ? (
-
+        {/*
         // This `div` is Rendered if the user IS logged in. It is a container for the welcome message and sign-out button.
         // The `className` uses Tailwind CSS utilities to style it:
         // - `flex`: This enables a Flexbox layout, which places its direct children (the `<span>` and `<button>`)
@@ -74,6 +66,7 @@ export function AuthStatus() {
         // - `gap-2`: This creates a small, consistent space (`0.5rem`) between the flex items.
         // - `items-center`: This is a Flexbox property that vertically aligns the items in the center of the row,
         //   ensuring the text and the button are perfectly aligned with each other.
+        */}
         <div className="flex gap-2 items-center">
 
           {/* This `<span>` displays the personalized welcome message. */}
@@ -97,26 +90,9 @@ export function AuthStatus() {
           {/* - `hover:bg-red-700`: A "state variant" that applies a slightly darker red background only when the user's mouse is hovering over the button, providing interactive feedback. */}
           {/* - `transition`: Adds a smooth transition effect to all property changes (like the background color on hover). */}
           <button onClick={() => signOut()} className="bg-red-600 text-white px-1 py-1 rounded hover:bg-red-700 transition">
-            Sign Out</button>
+            Sign Out
+          </button>
         </div>
-
-      // The `:` separates the "true" case from the "false" case in the ternary operator.
-      ) : (
-
-        // This button is rendered if the user is NOT logged in.
-        // It provides a clear "Sign In" action in the application's header.
-        // `onClick={() => signIn()}`: This event handler calls the `signIn` function when clicked,
-        // which will redirect the user to the `/login` page.
-        //  
-        // - `bg-blue-600`: Sets the background color to a shade of blue, a common UI convention for a primary, positive action.
-        // - `text-white`: Sets the text color to white.
-        // - `px-1 py-1`: Sets horizontal and vertical padding.
-        // - `rounded`: Applies slightly rounded corners.
-        // - `hover:bg-blue-700`: A "state variant" that darkens the background on hover for interactive feedback.
-        // - `transition`: Adds a smooth transition effect to property changes.
-        <button onClick={() => signIn()} className="bg-blue-600 text-white px-1 py-1 rounded hover:bg-blue-700 transition">
-          Sign In</button>
-      )}
     </div>
   );
 }

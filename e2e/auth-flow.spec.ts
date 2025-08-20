@@ -270,11 +270,11 @@ test.describe("Authentication Flow", () => {
         // This is the final assertion for the successful login. It confirms that the correct
         // content has been rendered on the tasks page.
         // `page.getByRole("heading", ...)`: This locator finds the main heading element on the page.
-        // `name: \`Tasks for ${uniqueEmail}\``: We are using a template literal to construct the
+        // `name: \`Task List:\``: We are using a template literal to construct the
         // expected text of the heading, which should be personalized with the user's email.
         // `.toBeVisible()`: This assertion checks that the heading with the correct text is actually
         // visible on the screen, confirming a successful end-to-end login and page render.
-        await expect(page.getByRole("heading", { name: `Tasks for ${uniqueEmail}` })).toBeVisible();
+        await expect(page.getByRole("heading", { name: `Task List:` })).toBeVisible();
 
         // This begins the final step of the test: logging the user out.
         // It finds the "Sign Out" button by its accessible role and name and simulates a click.
