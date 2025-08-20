@@ -187,21 +187,23 @@ export default function RegisterPage() {
       // browser to the `/login` route, where they can now attempt to sign in.
       router.push("/login");
 
-    // The `catch` block will execute if any error was thrown at any point inside the `try` block.
-    // This could be a network failure (e.g., the user is offline and `fetch` fails) or the
-    // explicit `throw new Error(...)` we triggered if the server responded with an error status.
-    // `error`: This variable contains the error object that was "caught". We are typing it as `any`
-    // for simplicity, as the type of thrown errors can be unpredictable.
-    } catch (error: any) {
+    // The `catch` block executes if any error was thrown inside the `try` block.
+    // The `error` variable, typed as `unknown` by default, contains the thrown value.
+    } catch (error) {
 
-      // The following displays a toats containing the error.
-      // The `error` object will be a tRPC-specific error, which has a `.message` property
-      // containing the specific error from the backend (e.g., "Email already in use").
-      //
-      // `error?.message`: We use optional chaining (`?.`) as a safety measure.
-      // `|| "..."`: If for some reason the error object or its message is undefined, the
-      // "nullish coalescing" operator (`||`) provides a generic fallback message.
-      toast.error(error?.message || "An unexpected error occurred.");
+      // This is the modern, type-safe way to handle unknown errors. We first check if the
+      // `error` is a standard JavaScript `Error` object, which is guaranteed to have a `.message` property.
+      if (error instanceof Error) {
+
+        // If it's a standard Error (which tRPC errors are), we can safely access its `.message`
+        // property to display the specific error from the backend (e.g., "Email already in use").
+        toast.error(error.message);
+
+        // If the thrown value was something else (e.g., a string or a plain object), we display 
+        // a generic fallback message to the user.
+      } else {
+        toast.error("An unexpected error occurred.");
+      }
 
     // The `finally` block is a special part of the `try...catch` statement.
     // The code inside `finally` will always be executed, regardless of whether the `try`

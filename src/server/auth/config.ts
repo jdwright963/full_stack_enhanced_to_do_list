@@ -14,10 +14,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 // `NextAuthConfig`: The type that our main `authConfig` object must satisfy, providing autocompletion and error checking.
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 
-// Imports the pre-configured provider for "Sign in with Discord". This object contains all the
-// logic for handling the OAuth 2.0 flow with Discord.
-import DiscordProvider from "next-auth/providers/discord";
-
 // Imports the provider for a traditional email and password login system.
 // Unlike OAuth providers, we must supply the logic to authorize the user ourselves.
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -122,13 +118,20 @@ export const authConfig = {
           // },
         });
 
-        // This error message is thrown if:
-        // 1. No user was found with the provided email (`!user`).
-        // 2. A user was found, but they don't have a password set (e.g., they signed up via an OAuth provider like Discord).
+        // This is a critical security and logic check performed after the database query.
+        // The `if (!user?.password)` condition will be true if:
         //
-        // By throwing the same generic error in both cases, we avoid "user enumeration" vulnerabilities,
-        // where an attacker could otherwise determine which email addresses are registered in the system.
-        if (!user || !user.password) {
+        // 1. No user was found with the provided email (`user` is null).
+        // 2. A user was found, but their `password` field is null.
+        //
+        // The `?.` is the "optional chaining" operator. It safely handles the first case. If `user`
+        // is null, the expression short-circuits to `undefined` without throwing an error, and the
+        // `if` condition becomes true.
+        //
+        // By throwing the same generic error message in both cases, we avoid a "user enumeration"
+        // vulnerability. An attacker cannot use this endpoint to determine which email addresses
+        // are registered in our system, as they will get the same response either way.
+        if (!user?.password) {
           throw new Error("No user found with this email.");
         }
         

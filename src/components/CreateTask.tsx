@@ -73,7 +73,17 @@ export function CreateTask() {
       // it has for the main task list is now stale. React Query then automatically re-fetches
       // the `task.getAll` query in the background. This causes the `TaskList` component to
       // re-render with the new data, making the newly created task appear in the list.
-      utils.task.getAll.invalidate();
+      // We use void, because the `utils.task.getAll.invalidate()` function is asynchronous and returns a 
+      // `Promise`. The `@typescript-eslint/no-floating-promises` rule requires that we handle this promise
+      // (e.g., with `await` or `.catch()`).
+      //
+      // We want to trigger the re-fetch, but we don't need to *wait* for it to complete. The user
+      // experience is better if the input clears instantly.
+      //
+      // The `void` operator is a standard way to explicitly signal to TypeScript and ESLint that
+      // we are intentionally not handling the promise. It evaluates the expression and then returns
+      // `undefined`, satisfying the linter rule and clearly documenting our intent to ignore the result.
+      void utils.task.getAll.invalidate();
     },
   });
 
