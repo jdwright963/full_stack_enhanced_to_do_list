@@ -20,6 +20,12 @@
 // essential `@tailwind` directives that inject all of Tailwind's CSS into the app.
 import "../styles/globals.css";
 
+// Imports the `AuthStatus` component. This is a custom, reusable Client Component
+// that displays the user's current authentication state (e.g., a "Welcome"
+// message and "Sign Out" button if logged in, or a "Sign In" button if logged out).
+// By placing this in the root layout, it will appear consistently on every page.
+import { AuthStatus } from "~/components/AuthStatus";
+
 // This imports the `Inter` font function from the `next/font` optimization package.
 // This is Next.js's recommended way to handle web fonts. It improves performance and
 // prevents "layout shifts" by downloading the font at build time and self-hosting it,
@@ -130,17 +136,19 @@ export default async function RootLayout(
     <html lang="en">
 
       {
-      // EDTT!!!
       // This renders the `<body>` element, which contains all the visible content of the page.
       //
-      // `className={inter.className}`: This line activates the optimized 'Inter' font for the entire application.
-      // The `inter.className` is a special class provided by the `next/font` package. This is a Next.js
-      // performance feature that self-hosts the font; it is not a standard Tailwind CSS class.
-      // Applying it here makes 'Inter' the base font that all of Tailwind's text utilities will use by default.
+      // `className`: We use a template literal to combine multiple class strings.
+      // - `${inter.className}`: This applies the special class from `next/font` to set 'Inter'
+      //   as the base font for the entire application.
+      //
+      // - `bg-gray-900 text-white`: These are global base styles. By setting the background
+      //   and text color on the `<body>` tag, we ensure that every page in the application
+      //   shares a consistent dark theme by default. This is a best practice that prevents
+      //   having to repeat these classes on every individual page component.
       }
       <body className={`${inter.className} bg-gray-900 text-white`}>
 
-        
          {
         // Renders the Toaster component from `react-hot-toast`. This component is self-closing
         // because it doesn't wrap any other elements. Instead, it invisibly sets up the global
@@ -180,7 +188,13 @@ export default async function RootLayout(
           }
           <TRPCReactProvider>
 
-            {
+            {/* // This renders our custom `AuthStatus` component. Because it's placed here in the
+            // root layout, it will act as a persistent, global header element, visible on
+            // every page of the application, showing the user's current login status.
+             */}
+            <AuthStatus />
+
+             {
             // This is the placeholder where Next.js will inject the actual page content
             // (e.g., the UI from `page.tsx` or `/tasks/page.tsx`). It is the "child" of all the providers.
             }
