@@ -145,8 +145,6 @@ export function TaskList() {
         // - `items-center`: A Flexbox property that vertically aligns the items in the middle of the `<li>`.
         // - The remaining classes add a border, padding, and rounded corners for styling.
         <li key={task.id} className="flex justify-between items-center border p-2 rounded border-gray-700">
-
-          
           
           {// This `<span>` element wraps the task title text, making it an interactive, clickable area.
           }
@@ -167,7 +165,7 @@ export function TaskList() {
             // 2. The Wrong Way (A common mistake):
             //    `onClick={toggleTask.mutate({ id: task.id })}`
             //    - If we wrote it like this (without the `() =>`), the `toggleTask.mutate` function would be
-            //      **called immediately** as soon as the component renders.
+            //      called immediately as soon as the component renders.
             //    - This would trigger a mutation for every single task in the list the moment the page loads,
             //      which is a major bug.
             //

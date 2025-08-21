@@ -1,6 +1,3 @@
-// DELETE?
-
-
 // The purpose of this file is to customize the configuration of Tailwind.
 import type { Config } from "tailwindcss";
 
