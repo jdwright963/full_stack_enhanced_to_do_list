@@ -58,10 +58,8 @@ A production-style, type-safe task management application built with the T3 Stac
 18. Useful NPM Scripts
 19. Code Quality (ESLint / Prettier / TypeScript)
 20. Tailwind & Styling
-21. Common Workflows
-22. Deployment Notes
-23. Troubleshooting
-24. Future Enhancements
+21. Deployment Notes
+22. Troubleshooting
 
 ---
 
@@ -323,13 +321,13 @@ pytest tests_api/
 ## 16. Continuous Integration (GitHub Actions)
 Workflows:
 - Playwright E2E: [.github/workflows/playwright.yml](.github/workflows/playwright.yml)
-  - Installs browsers, isolates DB schema, runs tests headless.
+  - Installs Node.js and dependencies, sets up browser binaries, resets and migrates the test database, isolates DB schema, starts the Next.js server automatically, and runs Playwright tests in headless mode.
 - Backend tests: `.github/workflows/backend_tests.yml` (file not listed above but referenced)
-  - Spins Next.js dev server, polls health, runs Python tests, prints logs.
+  - Starts the Next.js dev server, waits for it to be healthy, runs Python API tests (`pytest`), and prints logs for debugging.
 
 Both:
-- Use secrets for environment values.
-- Append `?schema=<job>` to `DATABASE_URL` to avoid cross-job contamination.
+- Use secrets from GitHub settings for environment variables (never stored in the repo).
+- Append `?schema=<job>` to `DATABASE_URL` so each workflow uses a separate, isolated database schema—this prevents tests from interfering with each other and ensures reliable results.
 
 ---
 
@@ -337,76 +335,91 @@ Both:
 - Deterministic environment using [Dockerfile.playwright](Dockerfile.playwright) (inherits Playwright-maintained image).
 - Run ad-hoc:
 ```bash
+
+# This command builds a Docker image for running Playwright tests:
+# - 'docker build' is the command to build a Docker image from a Dockerfile.
+# - '-f Dockerfile.playwright' tells Docker to use the file named 'Dockerfile.playwright' for build instructions (instead of the default 'Dockerfile').
+# - '-t playwright-tests' tags (names) the resulting image as 'playwright-tests' so you can reference it easily later.
+# - '.' (dot) specifies the build context, which means Docker will use the current directory and all its files as input for the build.
 docker build -f Dockerfile.playwright -t playwright-tests .
+
+# This command runs the Playwright tests inside a Docker container:
+# - 'docker run' starts a new container from a specified image.
+# - '--rm' tells Docker to automatically remove the container after it finishes running, so you don't have leftover containers.
+# - 'playwright-tests' is the name of the image to run (the one you built above).
+# When this runs, Docker starts a container using the Playwright image, executes the default command  ('npx playwright test'), and then deletes the container when done.
 docker run --rm playwright-tests
 ```
 
 ---
 
 ## 18. Useful NPM Scripts (package.json)
+
+> **How to run these scripts:**  
+> Use `npm run <script-name>` in your terminal.  
+> For example, to start the dev server, run:  
+> ```bash
+> npm run dev
+> ```
+> The table below lists the script names as defined in `package.json`.
+
 | Script | Purpose |
 |--------|---------|
-| `dev` | Next.js dev server (Turbo) |
-| `build` | Production build |
-| `preview` | Build + start |
-| `lint` / `lint:fix` | ESLint checks |
-| `typecheck` / `check` | TypeScript + lint combined |
-| `format:check` / `format:write` | Prettier formatting |
-| `db:generate` | `prisma migrate dev` |
-| `db:migrate` | Deploy migrations |
-| `db:push` | Push schema (no migration) |
-| `db:studio` | Prisma Studio GUI |
-| `postinstall` | Prisma generate |
+| `dev` | Starts the Next.js development server using Turbo (fast refresh, hot reload, local development). |
+| `build` | Creates a production-ready build of your Next.js app (optimizes code, prepares for deployment). |
+| `preview` | Runs the built app locally as it would in production (lets you test the final build before deploying). |
+| `lint` / `lint:fix` | Runs ESLint to check your code for errors and style issues; lint:fix also automatically fixes problems it can. |
+| `typecheck` / `check` | Checks your code for TypeScript errors; check may also run linting together with type checks. |
+| `format:check` / `format:write` | Uses Prettier to check code formatting (format:check) or automatically format code (format:write). |
+| `db:generate` | Runs `prisma migrate dev`, which applies migrations and generates the Prisma client. |
+| `db:migrate` | Deploys database migrations to your production or CI database. |
+| `db:push` | Pushes your Prisma schema changes directly to the database (no migration history, for quick prototyping). |
+| `db:studio` | Opens Prisma Studio, a web GUI for viewing and editing your database tables. |
+| `postinstall` | Runs after dependencies are installed; typically generates the Prisma client automatically. |
 
 ---
 
 ## 19. Code Quality
-- ESLint config: [eslint.config.js](eslint.config.js)
-- Prettier config: [prettier.config.js](prettier.config.js)
-- Tailwind class sorting via `prettier-plugin-tailwindcss`.
-- Full strict TypeScript: [tsconfig.json](tsconfig.json)
+- **ESLint config:** [eslint.config.js](eslint.config.js)  
+  ESLint checks the code for errors, potential bugs, and enforces coding style rules.
+
+- **Prettier config:** [prettier.config.js](prettier.config.js)  
+  Prettier automatically formats the code for consistent style (indentation, quotes, etc.).
+
+- **Tailwind class sorting via `prettier-plugin-tailwindcss`:**  
+  This plugin ensures Tailwind CSS utility classes are always ordered consistently in the code.
+
+- **Full strict TypeScript:** [tsconfig.json](tsconfig.json)  
+  TypeScript is set to strict mode, catching more type errors and enforcing safer code.
 
 ---
 
 ## 20. Tailwind & Styling
 - Tailwind setup: [tailwind.config.ts](tailwind.config.ts)
 - Global CSS: [src/styles/globals.css](src/styles/globals.css)
-- Utility-first classes + dark neutral palette; minimal custom theme.
-
----
-
-## 21. Common Workflows
-### Add a New tRPC Procedure
-1. Create router or extend existing (e.g. edit [`taskRouter`](src/server/api/routers/task.ts)).
-2. Export via [`appRouter`](src/server/api/root.ts).
-3. Use on client through `api.<namespace>.<procedure>.useQuery()` or `.useMutation()` after rebuild (types auto-infer).
-
-### Add Environment Variable
-1. Add to `.env.example` (and `.env.example.test` if needed).
-2. Add schema in [`env`](src/env.js) (server or client block).
-3. Reference via `env.MY_VAR` (never `process.env` in app code).
-4. Restart dev server.
-
-### Add Protected Page
-1. Use Server Component.
-2. Call `const session = await auth();`
-3. Redirect if absent (`redirect("/login?callbackUrl=/your-page")`).
 
 ---
 
 ## 22. Deployment Notes
-- Vercel compatible (App Router).
-- Ensure all required env vars configured in hosting provider.
-- Use `migrate deploy` in build step (Prisma).
-- Skip validation for container builds (optional): `SKIP_ENV_VALIDATION=true`.
 
+- **Vercel compatible (App Router):**  
+  The project uses Next.js App Router, which is fully supported by Vercel. You can deploy directly to Vercel without extra configuration, and features like server components and API routes will work out of the box.
+
+- **Ensure all required environment variables are configured in your hosting provider:**  
+  Before deploying, make sure you set all necessary environment variables (like `DATABASE_URL`, `NEXTAUTH_SECRET`, SMTP credentials, etc.) in your hosting provider’s dashboard. Missing variables will cause build or runtime errors.
+
+- **Use `migrate deploy` in the build step (Prisma):**  
+  In production, run `npx prisma migrate deploy` during your build/deploy process. This command applies any new database migrations to keep the schema up to date. It’s safer and more predictable than development commands.
+
+- **Skip validation for container builds (optional): `SKIP_ENV_VALIDATION=true`:**  
+  If you’re building Docker containers and want to skip strict environment variable validation (for example, when some variables are only set at runtime), you can set the environment variable `SKIP_ENV_VALIDATION=true`. This disables the Zod validation step during the build.
 ---
 
 ## 23. Troubleshooting
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Auth always failing | Missing `AUTH_SECRET` / `NEXTAUTH_SECRET` | Set secrets & rebuild |
-| Email not sent | Bad SMTP credentials | Verify `.env` vs provider |
+| Email not sent | Bad SMTP credentials | Compare `.env` and email provider |
 | Playwright timeout on startup | App not ready | Check server logs artifact / extend `webServer` timeout |
 | Prisma connection errors | Multiple dev hot reloads | Ensure singleton pattern (see [`server.db`](src/server/db.ts)) |
 | Env validation failure | Missing variable | Compare with [.env.example](.env.example) |
@@ -417,21 +430,10 @@ docker run --rm playwright-tests
 - Password reset flow.
 - Role-based authorization.
 - Pagination / filtering of tasks.
-- Accessibility & internationalization pass.
 - Containerized full stack (Docker Compose).
 - Metrics / tracing.
 
 ---
 
 ## License
-Not specified. Add one (e.g., MIT) if open-sourcing.
-
----
-
-## Security Notice
-Do not commit real secrets. Regenerate any sample secrets before deploying.
-
----
-
-## Attribution
-Generated with create-t3-app and extended with custom auth + testing scaffolding.
+Not specified.
