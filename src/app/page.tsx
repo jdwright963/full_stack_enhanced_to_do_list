@@ -91,7 +91,7 @@ export default async function Home() {
           
           By placing "FocusTasks" inside this styled span, we can apply a different color
           to it without affecting the "Welcome to " text. The `text-bg-blue-600` class
-          sets the text color for only this part of the heading, creating the branded highlight.
+          sets the text color for only this part of the heading, creating the branded highlight
         */}
         Welcome to <span className="text-blue-600">MyList.dev</span>
       </h1>
