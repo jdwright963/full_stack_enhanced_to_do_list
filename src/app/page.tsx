@@ -93,7 +93,7 @@ export default async function Home() {
           to it without affecting the "Welcome to " text. The `text-bg-blue-600` class
           sets the text color for only this part of the heading, creating the branded highlight.
         */}
-        Welcome to <span className="text-blue-600">MyList.devv</span>
+        Welcome to <span className="text-blue-600">MyList.dev</span>
       </h1>
 
       {// This renders the descriptive paragraph or "tagline" below the main heading.
