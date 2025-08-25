@@ -7,6 +7,11 @@
 // handle user interactions (like form input and submission).
 'use client';
 
+// Imports the `toast` function from the `react-hot-toast` library. This is a utility for
+// displaying small, non-intrusive notification pop-ups (toasts) to provide immediate
+// feedback to the user, such as "Registration successful!" or an error like "Email already in use".
+import { toast } from "react-hot-toast";
+
 // Imports the `useState` hook from the React library. This is a fundamental hook that allows
 // function components to have "state" — variables whose changes will cause the component to
 // re-render and update the UI. We will use it here to store the text the user is typing
@@ -85,6 +90,70 @@ export function CreateTask() {
       // `undefined`, satisfying the linter rule and clearly documenting our intent to ignore the result.
       void utils.task.getAll.invalidate();
     },
+
+    // This callback runs automatically if the mutation fails (for example, if the input is invalid).
+    onError: (error) => {
+      
+    // This line attempts to extract field-specific validation errors from the error object returned by tRPC.
+    // The error object from tRPC may have a nested structure, where:
+    // - The top-level `error` object may or may not have a `data` property (depending on the error type).
+    // - If present, `data` may have a `zodError` property, which contains validation errors produced by Zod.
+    // - The `zodError` object may have a `fieldErrors` property.
+    // 
+    // The `fieldErrors` property is an object (sometimes called a dictionary or map).
+    // Each key in this object is the name of a field in the form (for example: "email" or "password").
+    // The value for each key is always an array of strings, where each string is a separate error message
+    // describing why that particular field failed validation.
+    // 
+    // For example, if both the email and password fields are invalid, `fieldErrors` might look like:
+    // {
+    //   email: ["Please enter a valid email address."],
+    //   password: ["Password must be at least 6 characters long.", "Password must contain a special character."]
+    // }
+    // 
+    // Note: 
+    // - A single field can have multiple error messages if it fails more than one Zod validation rule.
+    // - If a field passes all validation, it will not appear in the `fieldErrors` object at all.
+    // 
+    // The use of `?.` (optional chaining) after each property ensures that if any part of the chain is
+    // missing or undefined, the whole expression will safely resolve to `undefined` rather than throwing an error.
+      const fieldErrors = error?.data?.zodError?.fieldErrors;
+
+    // This `if` statement checks whether fieldErrors exists (i.e., is not `undefined` or `null`).
+    // If it does, that means there are validation errors to process and display to the user.
+      if (fieldErrors) {
+
+        // `Object.values(fieldErrors)` retrieves all the values (i.e., arrays of error messages) from the fieldErrors object.
+        // For example, with the previous example, this produces: [["Please enter a valid email address."], ["Password must be at least 6 characters long.", "Password must contain a special character."]]
+        // The `.flat()` method then flattens this array of arrays into a single array of error messages:
+        // ["Please enter a valid email address.", "Password must be at least 6 characters long.", "Password must contain a special character."]
+        // The `.forEach((msg) => { ... })` method then iterates through each error message in this
+        // flattened array, executing the function body once for each message. The parameter `msg`
+        // represents the current error message being processed during that iteration.
+        Object.values(fieldErrors).flat().forEach((msg) => {
+          
+          // `if (msg)` checks if the current error message is truthy (not undefined, null, or an empty string).
+          // This ensures that only valid, non-empty error messages are shown to the user.
+          // If the check passes, `toast.error(msg)` displays the error message as a toast notification on the screen.
+          if (msg) toast.error(msg);
+        });
+      }
+      
+      // If there were no Zod field validation errors, this block checks for a general error message.
+      // The `error.message` property is available on standard JavaScript Error objects and many tRPC errors.
+      // If such a message exists, it will be displayed to the user as a toast notification.
+      else if (error.message) {
+        toast.error(error.message);
+      }
+      
+      // If there is neither a field validation error nor a general error message, this block executes.
+      // This is a fallback to handle unexpected error cases where no specific details are available.
+      // It displays a generic error toast to let the user know something went wrong, even if the backend
+      // didn't provide further information.
+      else {
+        toast.error("An unexpected error occurred.");
+      }
+    },
   });
 
   // This is the component's main `return` statement. It defines the JSX that will be rendered
@@ -107,14 +176,13 @@ export function CreateTask() {
         // JavaScript logic without a disruptive page refresh.
         e.preventDefault();
 
-        // `createTask.mutate({ title })`: If the title is not empty, we call the `.mutate()` function
+        // `createTask.mutate({ title })`: We call the `.mutate()` function
         // from the `createTask` object we created earlier with `useMutation`. This is the action
         // that actually triggers the API call to the backend `task.create` procedure.
         //
         // We are passing it a data payload object. This object's shape must match the Zod input
         // schema that we defined on the backend for this procedure.
         //
-        // --- Understanding the `{ title }` Shorthand ---
         // The `{ title }` syntax is a modern JavaScript feature called "Object Property Shorthand".
         // It is a direct shortcut for writing `{ title: title }`.
         //
@@ -122,7 +190,7 @@ export function CreateTask() {
         // property key that our backend API expects (`title`), we can use this shorthand to
         // avoid repetition. JavaScript automatically creates an object with a `title` key
         // and assigns it the value from our `title` state variable.
-        if (title) createTask.mutate({ title });
+        createTask.mutate({ title });
       }}
 
       // The `className` prop applies several Tailwind CSS utility classes to style the form's layout.

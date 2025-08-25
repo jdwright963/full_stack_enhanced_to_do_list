@@ -75,7 +75,72 @@ export default function RegisterPage() {
   // - Instead, it returns a `registerMutation` object that contains everything needed to manage
   //   the lifecycle of the mutation, including a function to trigger it (`.mutateAsync()`) and
   //   status flags like `.isLoading`.
-  const registerMutation = api.auth.register.useMutation();
+  const registerMutation = api.auth.register.useMutation({
+
+    // The `onError` property is a callback function provided by React Query/tRPC mutation hooks.
+    // It is called automatically whenever the mutation fails (i.e., the registration API call returns an error).
+    // The function receives a single argument named `error`, which contains information about what went wrong.
+     onError: (error) => {
+
+    // This line attempts to extract field-specific validation errors from the error object returned by tRPC.
+    // The error object from tRPC may have a nested structure, where:
+    // - The top-level `error` object may or may not have a `data` property (depending on the error type).
+    // - If present, `data` may have a `zodError` property, which contains validation errors produced by Zod.
+    // - The `zodError` object may have a `fieldErrors` property.
+    // 
+    // The `fieldErrors` property is an object (sometimes called a dictionary or map).
+    // Each key in this object is the name of a field in the form (for example: "email" or "password").
+    // The value for each key is always an array of strings, where each string is a separate error message
+    // describing why that particular field failed validation.
+    // 
+    // For example, if both the email and password fields are invalid, `fieldErrors` might look like:
+    // {
+    //   email: ["Please enter a valid email address."],
+    //   password: ["Password must be at least 6 characters long.", "Password must contain a special character."]
+    // }
+    // 
+    // Note: 
+    // - A single field can have multiple error messages if it fails more than one Zod validation rule.
+    // - If a field passes all validation, it will not appear in the `fieldErrors` object at all.
+    // 
+    // The use of `?.` (optional chaining) after each property ensures that if any part of the chain is
+    // missing or undefined, the whole expression will safely resolve to `undefined` rather than throwing an error.
+    const fieldErrors = error?.data?.zodError?.fieldErrors;
+
+    // This `if` statement checks whether fieldErrors exists (i.e., is not `undefined` or `null`).
+    // If it does, that means there are validation errors to process and display to the user.
+    if (fieldErrors) {
+      
+      // `Object.values(fieldErrors)` retrieves all the values (i.e., arrays of error messages) from the fieldErrors object.
+      // For example, with the previous example, this produces: [["Please enter a valid email address."], ["Password must be at least 6 characters long.", "Password must contain a special character."]]
+      // The `.flat()` method then flattens this array of arrays into a single array of error messages:
+      // ["Please enter a valid email address.", "Password must be at least 6 characters long.", "Password must contain a special character."]
+      // The `.forEach((msg) => { ... })` method then iterates through each error message in this
+      // flattened array, executing the function body once for each message. The parameter `msg`
+      // represents the current error message being processed during that iteration.
+      Object.values(fieldErrors).flat().forEach((msg) => {
+
+        // `if (msg)` checks if the current error message is truthy (not undefined, null, or an empty string).
+        // This ensures that only valid, non-empty error messages are shown to the user.
+        // If the check passes, `toast.error(msg)` displays the error message as a toast notification on the screen.
+        if (msg) toast.error(msg);
+      });
+
+    // If there were no Zod field validation errors, this block checks for a general error message.
+    // The `error.message` property is available on standard JavaScript Error objects and many tRPC errors.
+    // If such a message exists, it will be displayed to the user as a toast notification.
+    } else if (error.message) {
+      toast.error(error.message);
+
+    // If there is neither a field validation error nor a general error message, this block executes.
+    // This is a fallback to handle unexpected error cases where no specific details are available.
+    // It displays a generic error toast to let the user know something went wrong, even if the backend
+    // didn't provide further information.
+    } else {
+      toast.error("An unexpected error occurred.");
+    }
+  },
+});
 
   // This function is an event handler. Its purpose is to be executed every time a user
   // interacts with a form input. Specifically, it will be attached to the `onChange` prop of
@@ -186,24 +251,6 @@ export default function RegisterPage() {
       // `router.push("/login")`: This method from the Next.js `useRouter` hook redirects the user's
       // browser to the `/login` route, where they can now attempt to sign in.
       router.push("/login");
-
-    // The `catch` block executes if any error was thrown inside the `try` block.
-    // The `error` variable, typed as `unknown` by default, contains the thrown value.
-    } catch (error) {
-
-      // This is the modern, type-safe way to handle unknown errors. We first check if the
-      // `error` is a standard JavaScript `Error` object, which is guaranteed to have a `.message` property.
-      if (error instanceof Error) {
-
-        // If it's a standard Error (which tRPC errors are), we can safely access its `.message`
-        // property to display the specific error from the backend (e.g., "Email already in use").
-        toast.error(error.message);
-
-        // If the thrown value was something else (e.g., a string or a plain object), we display 
-        // a generic fallback message to the user.
-      } else {
-        toast.error("An unexpected error occurred.");
-      }
 
     // The `finally` block is a special part of the `try...catch` statement.
     // The code inside `finally` will always be executed, regardless of whether the `try`

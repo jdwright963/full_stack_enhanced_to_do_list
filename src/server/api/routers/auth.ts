@@ -77,13 +77,63 @@ export const authRouter = createTRPCRouter({
       // `z.string()`: Specifies that the `email` must be a string.
       // `.email()`: A chained validator that further requires the string to be in a
       // valid email format (e.g., "user@domain.com").
-      email: z.string().email(),
+      // The `{ message: "..." }` is the argument to `.email()`, providing a
+      // specific error message if the email fails the validation.
+      email: z.string().email({ message: "Please enter a valid email address." }),
 
-      // This line defines the validation rule for the `password` field.
+      // `password:`: This is the key in a Zod schema object. It declares that the
+      // validation rules that follow apply to a field named 'password' in the
+      // data being validated.
+      //
+      // The `.` (dot) syntax is used for 'method chaining'. Each method (`.string()`,
+      // `.min()`, `.regex()`) returns the Zod schema object itself, allowing you to
+      // immediately call the next validation method on it. This creates a fluent
+      // and readable sequence of rules.
+      //
       // `z.string()`: Specifies that the `password` must be a string.
-      // `.min(6)`: A chained validator that enforces a minimum length, requiring the
-      // password string to be at least 6 characters long.
-      password: z.string().min(6),
+      // `.min(6, { message: "..." })`: The first argument, `6`, sets the minimum
+      // character count. The second argument is an optional options object. Here,
+      // we use it to provide a custom `{ message: "..." }` that will be displayed
+      // if this specific `min` validation fails.
+      //
+      // `.regex(/.../, { message: "..." })`: This method validates the string
+      // against a regular expression (RegEx).
+      //
+      // The Regular Expression: `/.../`
+      // The `/` at the beginning and end mark this as a regular expression literal.
+      //
+      // `^`: An anchor that asserts the pattern must match from the beginning of the string.
+      //
+      // `(?=.*[A-Z])`: This is a 'positive lookahead'. It checks for a condition
+      // without consuming characters. This specific lookahead checks:
+      //   - `.*` : Match any character (except newline) zero or more times.
+      //   - `[A-Z]`: Followed by at least one uppercase letter.
+      //   - In plain English: "Is there at least one uppercase letter anywhere in the string?"
+      //
+      // `(?=.*\d)`: A second positive lookahead.
+      //   - `\d`: A shorthand for any digit (0-9).
+      //   - In plain English: "Is there at least one number anywhere in the string?"
+      //
+      // `(?=.*[!@#$%...])`: A third positive lookahead.
+      //   - `[...]`: A character set. The string must contain at least one of
+      //     the characters inside this set.
+      //   - In plain English: "Is there at least one special character anywhere in the string?"
+      //
+      // The use of three separate lookaheads anchored at the start (`^`) ensures that all
+      // three conditions (uppercase, number, special character) must be met, but they
+      // can appear in any order within the password.
+      //
+      // The `{ message: "..." }` is the second argument to `.regex()`, providing a
+      // specific error message if the password fails the regular expression test.
+      //
+      // The trailing `,` indicates that this `password` key-value pair is one of many
+      // properties inside a larger schema object, separating it from the next rule.
+      password: z.string()
+        .min(6, { message: "Password must be at least 6 characters long." })
+        .regex(
+          /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-])/,
+          { message: "Password must contain at least one uppercase letter, one number, and one special character." }
+        ),
     }))
 
     // This method is chained last and defines the actual server-side logic for the procedure.

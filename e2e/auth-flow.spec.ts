@@ -46,7 +46,7 @@ test.describe("Authentication Flow", () => {
 
     // This defines a static, hardcoded password for our test user. Since this is only for
     // testing and the database is wiped before each run, using a simple password is secure.
-    const password = "password123";
+    const password = "Password123!";
 
     // This is the declaration of our main test case within the suite.
     // `"User can register..."`: A descriptive, human-readable title for this specific test.

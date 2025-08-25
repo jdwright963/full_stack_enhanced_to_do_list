@@ -69,7 +69,9 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
       //   - tRPC automatically validates incoming data against this schema.
       //     If the client sends invalid data (e.g., no title, or a title that isn't a string),
       //     tRPC will reject the request with an error before the mutation code even runs.
-      .input(z.object({ title: z.string().min(1) }))
+      // The `{ message: "..." }` is the second argument to `.min()`, providing a
+      // specific error message if the title fails the validation.
+      .input(z.object({ title: z.string().min(1, { message: "Task title cannot be empty." }) }))
 
       // - `.mutation(async ({ ctx, input }) => { ... })`: This declares the procedure as
       //   a "mutation" (a data-changing operation).

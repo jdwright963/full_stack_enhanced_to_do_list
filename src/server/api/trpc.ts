@@ -180,6 +180,28 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
           // The condition: This checks if the underlying cause of the server error was a Zod validation error.
           // The `error.cause` property gives us the original error before tRPC wrapped it.
           // The `instanceof ZodError` check safely determines if the error came from the Zod library.
+          // The `?` is the start of a ternary operator, which is a compact if/else statement.
+          // It means: "If the preceding condition was true, then execute the following expression."
+          //
+          // `error.cause.flatten()`: This is the expression executed if the error IS a ZodError.
+          // The `.flatten()` method is a Zod utility that transforms the complex, nested error object
+          // into a simple, "flat" object. This new object is much easier to work with on the
+          // front-end.
+          // 
+          // The `:` is the second part of the ternary operator.
+          // It means: "...otherwise, if the condition was false, execute the expression that comes after."
+          //
+          // `null`: This is the value returned if the error was NOT a ZodError. It signifies the
+          // absence of validation errors, which is a clean and predictable value for the client to check against.
+          //
+          // The trailing `,` indicates that this entire line is a property within an object literal.
+          // It separates this key-value pair from the next one in the object.
+          // For example:
+          //   {
+          //     message: "An error occurred.",
+          //     zodError: error.cause instanceof ZodError ? error.cause.flatten() : null, // <- our line
+          //     nextProperty: "some other value"
+          //   }
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };

@@ -232,10 +232,10 @@ export default function LoginPage() {
     // If the login was successful, this property will be `null`.
     if (res?.error) {
 
-      // If an error string exists, we pass it directly to the `toast.error` function.
+      // If an error string exists, we display a toast with a generic error message.
       // This displays a red, user-friendly error notification pop-up on the screen, providing
       // immediate and clear feedback about why the login failed.
-      toast.error(res.error);
+      toast.error("Incorrect email or password.");
 
     // If `res.error` is null, this `else` block is executed, meaning the login was successful.
     } else {
