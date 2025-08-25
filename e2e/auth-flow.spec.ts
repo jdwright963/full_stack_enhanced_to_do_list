@@ -45,7 +45,7 @@ test.describe("Authentication Flow", () => {
     const uniqueEmail = `testuser_${Date.now()}@example.com`;
 
     // This defines a static, hardcoded password for our test user. Since this is only for
-    // testing and the database is wiped before each run, using a simple password is secure.
+    // testing and the database is wiped before each run, using a simple password is secure
     const password = "Password123!";
 
     // This is the declaration of our main test case within the suite.
