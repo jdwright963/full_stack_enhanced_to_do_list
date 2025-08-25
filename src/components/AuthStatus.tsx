@@ -53,10 +53,23 @@ export function AuthStatus() {
     //  - `flex`: This sets `display: flex`, which enables the "Flexbox" layout model for the form's 
     // direct children. By default, Flexbox arranges items in a horizontal row. This unlocks 
     // a powerful set of alignment properties for the elements direct children.
-    // - `justify-end`: A Flexbox property that aligns the content to the far right (end) of the container.
+    //  - `justify-between`: places space between children so the brand sits left and the controls sit right.
+    //  - `items-center`: vertically centers the row's children.
     // - `p-4`: Adds padding of `1rem` on all sides.
     // - `border-b`: Adds a 1px border to the bottom of the element.
-    <div className="flex justify-end p-4 border-b">
+    <div className="flex justify-between items-center p-4 border-b">
+
+          {/* 
+          Brand / primary site title
+          Tailwind classes:
+          - text-3xl       : default size (~1.875rem)
+          - sm:text-4xl    : ≥640px (~2.25rem)
+          - md:text-5xl    : ≥768px (~3rem)
+          - lg:text-6xl    : ≥1024px (~3.75rem)
+          - font-extrabold : very heavy font weight for prominence
+          - text-blue-600  : applies the brand/primary blue color
+        */}
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-600">MyList.dev</h1>
 
         {/*
         // This `div` is Rendered if the user IS logged in. It is a container for the welcome message and sign-out button.
