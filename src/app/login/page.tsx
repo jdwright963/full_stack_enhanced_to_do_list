@@ -232,10 +232,50 @@ export default function LoginPage() {
     // If the login was successful, this property will be `null`.
     if (res?.error) {
 
-      // If an error string exists, we display a toast with a generic error message.
-      // This displays a red, user-friendly error notification pop-up on the screen, providing
-      // immediate and clear feedback about why the login failed.
-      toast.error("Incorrect email or password.");
+      // try { ... } : Start of a try block. `try` is a JavaScript keyword that begins a block of code
+      // where runtime exceptions (errors) will be caught by the following `catch` block if any are thrown.
+      // The runtime will execute the code in the try block and if an exception is raised, control jumps
+      // to the corresponding catch block; otherwise the catch block is skipped.
+      try {
+
+      // The `fetch` function initiates a network request to the "/api/auth/check-email" endpoint.
+      // We `await` the completion of this request, and the resulting `Response` object is assigned to the `resp` variable.
+      const resp = await fetch("/api/auth/check-email", {
+
+          // Specifies the HTTP method as `POST`, indicating we are sending data to the server.
+          method: "POST",
+
+          // The request's `body` is the data being sent. Here, an object containing the user's email is converted
+          // into a JSON string to serve as the request's payload.
+          body: JSON.stringify({ email: formData.email }),
+
+            // The `headers` provide metadata. This `Content-Type` header tells the server that the `body` is formatted as JSON.
+          headers: { "Content-Type": "application/json" },
+        });
+
+      // The .json() method is called on the resp object to read the response body (a JSON-formatted string) and parse it into a JavaScript object.
+      // We await this parsing operation, and the resulting JavaScript object is assigned to the check variable.
+      const check = await resp.json();
+
+      // This conditional statement inspects the properties of the `check` object received from the server.
+      // The condition is true only if the user's account `exists` AND their email is NOT `verified`
+      if (check.exists && !check.emailVerified) {
+        toast.error("Please verify your email before logging in.");
+
+      // If the `if` condition is false (meaning the user doesn't exist OR is already verified), this `else` block is executed.
+      } else {
+        toast.error("Incorrect email or password.");
+      }
+
+      // If any error occurs within the `try` block (like a network failure or invalid server response),
+      // control jumps to this `catch` block. The error itself is captured in the `err` variable.
+      } catch (err) {
+        toast.error("Login failed.");
+      }
+
+      // This is an "early return". It explicitly stops the function's execution now that the
+      // login error has been fully handled.
+      return;
 
     // If `res.error` is null, this `else` block is executed, meaning the login was successful.
     } else {

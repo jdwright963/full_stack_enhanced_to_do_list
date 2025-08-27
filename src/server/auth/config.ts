@@ -108,37 +108,35 @@ export const authConfig = {
 
           // The `select` clause is an optimization. Instead of fetching the entire user record,
           // we are telling Prisma to only return the specific fields we need for authorization.
-          // select: {
-          //   id: true,
-          //   email: true,
-          //   password: true,
-          //   emailVerified: true,
-          //   name: true,
-          //   image: true,
-          // },
+          select: {
+            id: true,
+            email: true,
+            password: true,
+            emailVerified: true,
+            name: true,
+            image: true,
+          },
         });
 
+        // Generic message for missing user OR wrong password (prevents enumeration)
+        const genericInvalidMsg = "Incorrect email or password.";
+
         // This is a critical security and logic check performed after the database query.
-        // The `if (!user?.password)` condition will be true if:
+        // Returning `null` from `authorize` signals "authentication failed" to NextAuth's credential flow.
+        // We intentionally return `null` both when:
+        //  1) No user was found with the provided email, and
+        //  2) A user was found but they do not have a stored password.
         //
-        // 1. No user was found with the provided email (`user` is null).
-        // 2. A user was found, but their `password` field is null.
-        //
-        // The `?.` is the "optional chaining" operator. It safely handles the first case. If `user`
-        // is null, the expression short-circuits to `undefined` without throwing an error, and the
-        // `if` condition becomes true.
-        //
-        // By throwing the same generic error message in both cases, we avoid a "user enumeration"
-        // vulnerability. An attacker cannot use this endpoint to determine which email addresses
-        // are registered in our system, as they will get the same response either way.
+        // Returning `null` (instead of throwing a custom error) avoids NextAuth wrapping the error into
+        // its internal callback-route error types, which would produce opaque client-side error codes
+        // (e.g. "Configuration"). This approach gives the client a stable, consistent `signIn` response.
         if (!user?.password) {
-          throw new Error("No user found with this email.");
+          return null;
         }
-        
-        // If the user exists but hasn't verified their email yet,
-        // we deny the login and tell them to check their email.
+
+        // If the user exists but hasn't verified their email yet, we deny the login by returning `null`.
         if (!user.emailVerified) {
-          throw new Error("Please verify your email before logging in.");
+          return null;
         }
     
         // We use the `bcrypt.compare` function, which is designed for this specific, secure purpose.
@@ -148,7 +146,7 @@ export const authConfig = {
 
         // If `bcrypt.compare` returns false, the passwords do not match.
         if (!isValid) {
-          throw new Error("Incorrect password.");
+          return null;
         }
 
         // If we've passed all the checks (user exists, email is verified, password is valid),
