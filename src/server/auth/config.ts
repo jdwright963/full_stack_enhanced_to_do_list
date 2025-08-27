@@ -149,10 +149,18 @@ export const authConfig = {
           return null;
         }
 
-        // If we've passed all the checks (user exists, email is verified, password is valid),
-        // we return the `user` object.
-        // NextAuth.js sees this successful return and proceeds to create a session for this user.
-        return user;
+        // This is a crucial security step. We use object destructuring to create a "sanitized"
+        // version of the user object that explicitly removes the password hash before returning it.
+        // Here's the breakdown:
+        //  - `password: userPassword`: This finds the `password` property in the `user` object and assigns its value to a new,
+        //    separate constant named `userPassword`. This effectively isolates the password hash.
+        //  - `...userWithoutPassword`: The "rest properties" syntax (`...`) then collects all remaining properties from the
+        //    `user` object (id, email, name, etc.) and bundles them into a brand-new object called `userWithoutPassword`.
+        const { password: userPassword, ...userWithoutPassword } = user;
+
+        // This line completes the authorization flow by returning the sanitized `userWithoutPassword` object.
+        // A successful return from this function tells NextAuth that the user is valid.
+        return userWithoutPassword;
       },
     }),
   ],
