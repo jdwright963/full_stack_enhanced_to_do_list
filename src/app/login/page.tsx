@@ -34,6 +34,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 // feedback to the user, such as "Logged in!" or "Login failed".
 import { toast } from "react-hot-toast";
 
+// Imports the main `z` object from the "zod" library. Zod is a powerful tool for runtime data validation,
+// which helps ensure that data we receive matches the exact shape and type we expect.
+import { z } from "zod";
+
+// This defines a "schema" using Zod, which acts as a blueprint or a set of rules for our data.
+// We are declaring that a valid response from our `/api/auth/check-email` endpoint must be an object
+// containing an `exists` property that is a boolean, and an `emailVerified` property that is also a boolean.
+const checkEmailResponseSchema = z.object({
+  exists: z.boolean(),
+  emailVerified: z.boolean(),
+});
+
 // Defines and exports the main React component for the login page.
 // `export default` makes this component available to be imported by the Next.js routing system.
 export default function LoginPage() {
@@ -232,10 +244,74 @@ export default function LoginPage() {
     // If the login was successful, this property will be `null`.
     if (res?.error) {
 
-      // If an error string exists, we display a toast with a generic error message.
-      // This displays a red, user-friendly error notification pop-up on the screen, providing
-      // immediate and clear feedback about why the login failed.
-      toast.error("Incorrect email or password.");
+      // try { ... } : Start of a try block. `try` is a JavaScript keyword that begins a block of code
+      // where runtime exceptions (errors) will be caught by the following `catch` block if any are thrown.
+      // The runtime will execute the code in the try block and if an exception is raised, control jumps
+      // to the corresponding catch block; otherwise the catch block is skipped.
+      try {
+
+      // The `fetch` function initiates a network request to the "/api/auth/check-email" endpoint.
+      // We `await` the completion of this request, and the resulting `Response` object is assigned to the `resp` variable.
+      const resp = await fetch("/api/auth/check-email", {
+
+          // Specifies the HTTP method as `POST`, indicating we are sending data to the server.
+          method: "POST",
+
+          // The request's `body` is the data being sent. Here, an object containing the user's email is converted
+          // into a JSON string to serve as the request's payload.
+          body: JSON.stringify({ email: formData.email }),
+
+            // The `headers` provide metadata. This `Content-Type` header tells the server that the `body` is formatted as JSON.
+          headers: { "Content-Type": "application/json" },
+        });
+
+      
+      // The `resp.json()` method reads the raw response body from the server and parses it from a JSON-formatted string
+      // into a JavaScript object. This operation is asynchronous, so we `await` its completion. Critically, the result
+      // is typed as `any` by default in TypeScript, which dangerously disables all type-checking. By explicitly casting the result
+      // `as unknown`, we are telling TypeScript that we cannot trust the shape of this incoming data. This is a best
+      // practice that forces us to perform a validation check (using Zod in the next line) before the data can be safely used.
+      const rawCheck = (await resp.json()) as unknown;
+
+      // Here we use our Zod schema to validate the `rawCheck` data. The `.safeParse()` method is used because it
+      // never throws a program crashing error. Instead of halting execution (like `.parse()` would), it always returns
+      // one of two possible objects:
+      //  1. On success: `{ success: true, data: { ... } }` where `data` is the fully validated, type-safe data.
+      //  2. On failure: `{ success: false, error: ZodError }` where `error` is a Zod-specific object containing
+      //     detailed information about why the validation failed.
+      // This allows us to handle validation failures gracefully in our own code, rather than jumping to the `catch` block.
+      const parsedCheck = checkEmailResponseSchema.safeParse(rawCheck);
+
+      // This line uses a ternary operator to safely unwrap the validation result from the previous step.
+      // If the `safeParse` was successful (`parsedCheck.success` is true), the `check` variable is assigned the
+      // validated and now type-safe `parsedCheck.data`. If validation failed for any reason, `check` is assigned
+      // a fallback object, `{ exists: false, emailVerified: false }`.
+      const check = parsedCheck.success
+        ? parsedCheck.data
+        : { exists: false, emailVerified: false };
+
+      // This conditional statement inspects the properties of the `check` object received from the server.
+      // The condition is true only if the user's account `exists` AND their email is NOT `verified`
+      if (check.exists && !check.emailVerified) {
+        toast.error("Please verify your email before logging in.");
+
+      // If the `if` condition is false (meaning the user doesn't exist OR is already verified), this `else` block is executed.
+      } else {
+        toast.error("Incorrect email or password.");
+      }
+
+      // If any error occurs within the `try` block (like a network failure or invalid server response),
+      // control jumps to this `catch` block. The error itself is captured in the `err` variable.
+      } catch (err) {
+        // Use the caught error so the linter won't complain about an unused variable.
+        // Also log the error server-side for debugging.
+        console.error("check-email fetch error:", err);
+        toast.error("Login failed.");
+      }
+
+      // This is an "early return". It explicitly stops the function's execution now that the
+      // login error has been fully handled.
+      return;
 
     // If `res.error` is null, this `else` block is executed, meaning the login was successful.
     } else {

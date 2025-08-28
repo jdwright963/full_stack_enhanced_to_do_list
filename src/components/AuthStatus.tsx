@@ -13,19 +13,12 @@
 
 // This line imports three key client-side utilities from the `next-auth/react` library.
 //
-// - `signIn`: A powerful, multi-purpose function to initiate the sign-in process. Its
-//   behavior depends on the arguments provided:
-//   - `signIn()` (with no arguments): Redirects the user to your configured sign-in page (`/login`).
-//     This is used for links or buttons that start the login flow.
-//   - `signIn('credentials', { ...data })`: Sends the user's credentials (e.g., email/password)
-//     to the backend to actually perform the authentication. This is used inside the login form.
-//
 // - `signOut`: A function you call to log the user out. When called, it will clear the user's
 //   session cookie and reload the page to reflect the unauthenticated state.
 //
 // - `useSession`: A React hook that securely reads the user's current authentication state from
 //   the global `SessionProvider`. It returns the session `data` and a `status` string.
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 // This defines and exports a "Function Component" named `AuthStatus`.
 // `export`: This keyword makes the component available to be imported and used in other files

@@ -108,37 +108,32 @@ export const authConfig = {
 
           // The `select` clause is an optimization. Instead of fetching the entire user record,
           // we are telling Prisma to only return the specific fields we need for authorization.
-          // select: {
-          //   id: true,
-          //   email: true,
-          //   password: true,
-          //   emailVerified: true,
-          //   name: true,
-          //   image: true,
-          // },
+          select: {
+            id: true,
+            email: true,
+            password: true,
+            emailVerified: true,
+            name: true,
+            image: true,
+          },
         });
 
         // This is a critical security and logic check performed after the database query.
-        // The `if (!user?.password)` condition will be true if:
+        // Returning `null` from `authorize` signals "authentication failed" to NextAuth's credential flow.
+        // We intentionally return `null` both when:
+        //  1) No user was found with the provided email, and
+        //  2) A user was found but they do not have a stored password.
         //
-        // 1. No user was found with the provided email (`user` is null).
-        // 2. A user was found, but their `password` field is null.
-        //
-        // The `?.` is the "optional chaining" operator. It safely handles the first case. If `user`
-        // is null, the expression short-circuits to `undefined` without throwing an error, and the
-        // `if` condition becomes true.
-        //
-        // By throwing the same generic error message in both cases, we avoid a "user enumeration"
-        // vulnerability. An attacker cannot use this endpoint to determine which email addresses
-        // are registered in our system, as they will get the same response either way.
+        // Returning `null` (instead of throwing a custom error) avoids NextAuth wrapping the error into
+        // its internal callback-route error types, which would produce opaque client-side error codes
+        // (e.g. "Configuration"). This approach gives the client a stable, consistent `signIn` response.
         if (!user?.password) {
-          throw new Error("No user found with this email.");
+          return null;
         }
-        
-        // If the user exists but hasn't verified their email yet,
-        // we deny the login and tell them to check their email.
+
+        // If the user exists but hasn't verified their email yet, we deny the login by returning `null`.
         if (!user.emailVerified) {
-          throw new Error("Please verify your email before logging in.");
+          return null;
         }
     
         // We use the `bcrypt.compare` function, which is designed for this specific, secure purpose.
@@ -148,13 +143,22 @@ export const authConfig = {
 
         // If `bcrypt.compare` returns false, the passwords do not match.
         if (!isValid) {
-          throw new Error("Incorrect password.");
+          return null;
         }
 
-        // If we've passed all the checks (user exists, email is verified, password is valid),
-        // we return the `user` object.
-        // NextAuth.js sees this successful return and proceeds to create a session for this user.
-        return user;
+        // A shallow copy of the original `user` object is created. The spread syntax (`...`)
+        // unpacks all the key-value pairs (like `id`, `email`, etc.) from the `user` object and places
+        // them inside this new `userCopy` object, ensuring we can modify the copy without changing the original.
+        const userCopy = { ...user };
+
+        // The `delete` operator is used to remove the sensitive `password` property from our newly created `userCopy` object.
+        // The `as { password?: string }` is a TypeScript "type assertion"; it tells the type checker to temporarily
+        // treat the `password` property on our copy as optional, which is necessary to allow the `delete` operation without a type error.
+        delete (userCopy as { password?: string }).password;
+
+        // This line completes the authorization flow by returning the now-sanitized `userCopy` object.
+        // A successful return from this function tells NextAuth that the user is valid.
+        return userCopy;
       },
     }),
   ],
