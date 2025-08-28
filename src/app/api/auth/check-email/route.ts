@@ -14,6 +14,16 @@ import { NextResponse } from "next/server";
 // This is the DB client we use to run queries against the app's database.
 import { db } from "~/server/db";
 
+// Imports the main `z` object from the "zod" library. Zod is a powerful tool for runtime data validation,
+// which helps ensure that data we receive matches the exact shape and type we expect.
+import { z } from "zod";
+
+// Define a Zod schema for the expected request body.
+// This ensures we only accept an object that has an email string in valid email format.
+const bodySchema = z.object({
+  email: z.string().email(),
+});
+
 // `req: Request` is the TypeScript parameter declaration: `req` is the parameter name and 
 // `Request` is the type annotation (the Fetch API Request interface, which provides methods 
 // like `json()` and properties like `headers` and `method`).
@@ -27,26 +37,38 @@ export async function POST(req: Request) {
     // corresponding `catch` block to handle the error gracefully instead of crashing the server process.
     try {
 
-        // This line reads the incoming request's body, which is expected to be a JSON string (e.g., '{"email":"test@example.com"}').
-        // `req.json()`: This is an asynchronous method that parses that JSON string and returns a Promise that resolves to a JavaScript object (e.g., { email: "test@example.com" }).
-        // `await`: Pauses the function's execution until the JSON body has been fully parsed into an object.
-        // `const { email } = ...`: This is JavaScript's "object destructuring" syntax. It looks for a property named `email` inside the
-        // newly parsed object and creates a new constant variable, also named `email`, holding only the value of that property.
-        const { email } = await req.json();
+        // The `req.json()` method reads the raw request body from the server and parses it from a JSON-formatted string
+        // into a JavaScript object. This operation is asynchronous, so we `await` its completion. Critically, the result
+        // is typed as `any` by default in TypeScript, which dangerously disables all type-checking. By explicitly casting the result
+        // `as unknown`, we are telling TypeScript that we cannot trust the shape of this incoming data. This is a best
+        // practice that forces us to perform a validation check (using Zod in the next line) before the data can be safely used.
+        const raw = await req.json() as unknown;
 
-        // This line acts as a "guard clause" to validate the input. It checks if the `email` variable is "falsy" —
-        // meaning it's `undefined` (if the `email` key was missing from the JSON body), `null`, or an empty string.
-        if (!email) {
+        // Here we use our Zod schema to validate the `rawCheck` data. The `.safeParse()` method is used because it
+        // never throws a program crashing error. Instead of halting execution (like `.parse()` would), it always returns
+        // one of two possible objects:
+        //  1. On success: `{ success: true, data: { ... } }` where `data` is the fully validated, type-safe data.
+        //  2. On failure: `{ success: false, error: ZodError }` where `error` is a Zod-specific object containing
+        //     detailed information about why the validation failed.
+        // This allows us to handle validation failures gracefully in our own code, rather than jumping to the `catch` block.
+        const parsed = bodySchema.safeParse(raw);
 
-        // If no valid email was provided, this line immediately stops the function. It uses `NextResponse.json()`
+        // If parsing failed, this block immediately stops the function. It uses `NextResponse.json()`
         // to send a JSON response. The payload object, `{ exists: false, emailVerified: false }`, provides a
         // consistent, "safe" failure state for the frontend, explicitly setting both values to `false` because no
         // user could be checked. The `status: 200` (OK) signifies the request was handled gracefully.
-        return NextResponse.json(
-            { exists: false, emailVerified: false },
-            { status: 200 }
-        );
+        if (!parsed.success) {
+            return NextResponse.json(
+                { exists: false, emailVerified: false },
+                { status: 200 }
+            );
         }
+
+        // This line uses object destructuring to extract the `email` property directly from the `parsed.data` object.
+        // Since this code only runs after a successful Zod validation (`!parsed.success` was false), we are guaranteed
+        // that `parsed.data` is a type-safe object that perfectly matches our `bodySchema`. The result is a new `email`
+        // constant (which TypeScript correctly knows is a string), ready to be safely used in the database query below.
+        const { email } = parsed.data;
 
         // This line executes an asynchronous database query using the Prisma client.
         // `const user`: Declares a constant `user` to store the result of the query.
@@ -66,8 +88,8 @@ export async function POST(req: Request) {
         // 2. If a user is found BUT is not verified, it will be an object containing null: `{ emailVerified: null }`.
         // 3. If no user is found, the variable will be `null`.
         const user = await db.user.findUnique({
-        where: { email },
-        select: { emailVerified: true },
+            where: { email },
+            select: { emailVerified: true },
         });
 
         // This is the success path of the function, constructing and sending the final JSON response.
@@ -75,27 +97,26 @@ export async function POST(req: Request) {
         // and sets the correct `Content-Type` header.
         return NextResponse.json(
 
-        // This is the payload object that will be sent to the client.
-        {
+            // This is the payload object that will be sent to the client.
+            {
+                // The `exists` key is set by explicitly converting the `user` variable to a boolean using `Boolean()`.
+                // This results in `true` if `user` is an object (meaning the user was found) and `false`
+                // if `user` is `null` (meaning the user was not found).
+                exists: Boolean(user),
 
-            // The `exists` key is set by explicitly converting the `user` variable to a boolean using `Boolean()`.
-            // This results in `true` if `user` is an object (meaning the user was found) and `false`
-            // if `user` is `null` (meaning the user was not found).
-            exists: Boolean(user),
+                // The `emailVerified` key is also converted to a strict boolean for a simple `true`/`false` response.
+                // The optional chaining operator (`?.`) in `user?.emailVerified`. This operator
+                // first checks if the `user` object exists; if `user` is `null` (not found), it immediately returns
+                // `undefined` instead of throwing a "cannot read property of null" error. This safe access yields
+                // one of three values: a Date object (if verified), `null` (if not verified), or `undefined` (if the user doesn't exist).
+                // Finally, the `Boolean()` function is called on this result: a Date object becomes `true`, while both
+                // `null` and `undefined` become `false`.
+                emailVerified: Boolean(user?.emailVerified),
+            },
 
-            // The `emailVerified` key is also converted to a strict boolean for a simple `true`/`false` response.
-            // The optional chaining operator (`?.`) in `user?.emailVerified`. This operator
-            // first checks if the `user` object exists; if `user` is `null` (not found), it immediately returns
-            // `undefined` instead of throwing a "cannot read property of null" error. This safe access yields
-            // one of three values: a Date object (if verified), `null` (if not verified), or `undefined` (if the user doesn't exist).
-            // Finally, the `Boolean()` function is called on this result: a Date object becomes `true`, while both
-            // `null` and `undefined` become `false`.
-            emailVerified: Boolean(user?.emailVerified),
-        },
-
-        // The `{ status: 200 }` option sets the HTTP status code to "OK", confirming to the client
-        // that the database check was performed successfully, regardless of the outcome.
-        { status: 200 }
+            // The `{ status: 200 }` option sets the HTTP status code to "OK", confirming to the client
+            // that the database check was performed successfully, regardless of the outcome.
+            { status: 200 }
         );
 
     // This `catch` block acts as a safety net. It will only execute if an error is thrown
@@ -114,8 +135,8 @@ export async function POST(req: Request) {
         // the status is set to `500`, which stands for "Internal Server Error". This correctly
         // informs the client that the problem was on the server, not with the user's request.
         return NextResponse.json(
-        { exists: false, emailVerified: false },
-        { status: 500 }
+            { exists: false, emailVerified: false },
+            { status: 500 }
         );
     }
 }

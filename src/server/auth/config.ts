@@ -118,9 +118,6 @@ export const authConfig = {
           },
         });
 
-        // Generic message for missing user OR wrong password (prevents enumeration)
-        const genericInvalidMsg = "Incorrect email or password.";
-
         // This is a critical security and logic check performed after the database query.
         // Returning `null` from `authorize` signals "authentication failed" to NextAuth's credential flow.
         // We intentionally return `null` both when:
@@ -149,18 +146,19 @@ export const authConfig = {
           return null;
         }
 
-        // This is a crucial security step. We use object destructuring to create a "sanitized"
-        // version of the user object that explicitly removes the password hash before returning it.
-        // Here's the breakdown:
-        //  - `password: userPassword`: This finds the `password` property in the `user` object and assigns its value to a new,
-        //    separate constant named `userPassword`. This effectively isolates the password hash.
-        //  - `...userWithoutPassword`: The "rest properties" syntax (`...`) then collects all remaining properties from the
-        //    `user` object (id, email, name, etc.) and bundles them into a brand-new object called `userWithoutPassword`.
-        const { password: userPassword, ...userWithoutPassword } = user;
+        // A shallow copy of the original `user` object is created. The spread syntax (`...`)
+        // unpacks all the key-value pairs (like `id`, `email`, etc.) from the `user` object and places
+        // them inside this new `userCopy` object, ensuring we can modify the copy without changing the original.
+        const userCopy = { ...user };
 
-        // This line completes the authorization flow by returning the sanitized `userWithoutPassword` object.
+        // The `delete` operator is used to remove the sensitive `password` property from our newly created `userCopy` object.
+        // The `as { password?: string }` is a TypeScript "type assertion"; it tells the type checker to temporarily
+        // treat the `password` property on our copy as optional, which is necessary to allow the `delete` operation without a type error.
+        delete (userCopy as { password?: string }).password;
+
+        // This line completes the authorization flow by returning the now-sanitized `userCopy` object.
         // A successful return from this function tells NextAuth that the user is valid.
-        return userWithoutPassword;
+        return userCopy;
       },
     }),
   ],
