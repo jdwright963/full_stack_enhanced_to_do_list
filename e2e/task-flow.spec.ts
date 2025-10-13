@@ -27,9 +27,9 @@ test("Task flow: add, toggle, delete", async ({ page }) => {
   await page.getByLabel("Email").fill("jdwright963@gmail.com"); 
 
   // This line finds the password input field by its associated label and types in the password.
-  // IMPORTANT: The password here is the plain-text version. We are testing the user-facing
+  // The password here is the plain-text version. We are testing the user-facing
   // login form, not interacting directly with the database hash.
-  await page.getByLabel("Password").fill("password123");     
+  await page.getByLabel("Password").fill("Password123!");     
 
   // This line finds the login button and simulates a user click.
   // `page.getByRole("button", { name: "Login" })`: This locator finds an element with the

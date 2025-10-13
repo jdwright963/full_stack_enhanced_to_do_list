@@ -30,7 +30,7 @@ export default defineConfig({
   // This sets a global timeout for each individual test.
   // `60_000`: This is 60,000 milliseconds (60 seconds). The underscore `_` is a numeric separator
   // in TypeScript/JavaScript that has no effect on the value but makes large numbers easier to read.
-  // If a single test (from `test(...)` to its end) takes longer than 30 seconds, it will be marked as "timed out" and failed.
+  // If a single test (from `test(...)` to its end) takes longer than 60 seconds, it will be marked as "timed out" and failed.
   timeout: 60_000,
 
   // `globalSetup`: This property tells Playwright to run a script before any tests are executed.
@@ -46,10 +46,24 @@ export default defineConfig({
   // start your web application's server before running the tests.
   webServer: {
 
-    // This command tells Playwright to start the Next.js development server.
-    // The `-- --env-file .env.test` part is the crucial instruction to make
-    // the server load its environment variables from your test-specific file,
-    // ensuring it uses Mailtrap and the local test database.
+    // - 'cross-env NODE_ENV=test':
+    //   - 'cross-env': This is a critical utility. It allows you to set environment variables
+    //     (like NODE_ENV) in a way that works consistently across different operating systems
+    //     (Windows, macOS, Linux). Without 'cross-env', the syntax for setting environment
+    //     variables differs by OS (e.g., 'set VAR=value' on Windows vs. 'VAR=value' on Linux/macOS).
+    //     So, 'cross-env' *enables* us to reliably set 'NODE_ENV=test' for the spawned process.
+    //   - 'NODE_ENV=test': This sets the 'NODE_ENV' environment variable to 'test'.
+    //     This is crucial because Next.js (and many Node.js apps) uses this variable to determine
+    //     which environment-specific configurations or behaviors to apply. Setting it to 'test'
+    //     signals the application to run in a testing context.
+    //
+    // - 'npm run dev':
+    //   - This executes the 'dev' script defined in your 'package.json', typically running 'next dev'
+    //     to start the Next.js development server.
+    //
+    // The combination of 'cross-env NODE_ENV=test' and Next.js's built-in behavior means that
+    // the application will automatically load and use environment variables from '.env.test'
+    // (if it exists) instead of or in addition to default '.env' files.
     command: 'cross-env NODE_ENV=test npm run dev',
 
     // This is the URL that Playwright will wait for before it starts running tests.
@@ -72,4 +86,10 @@ export default defineConfig({
     // For local debugging, you would often change this to `false` to watch the test run.
     headless: true,
   },
+
+  // This setting controls how many test files Playwright will run in parallel.
+  // `1`: This means tests will run sequentially, one after the other.
+  // This is necessary because tests share a database
+  // Isolation will be considered for future improvements.
+  workers: 1,
 });
