@@ -66,12 +66,14 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
       //     a JavaScript object.
       //   - `{ title: z.string().min(1) }`: Specifies that the object must have a `title`
       //     property which must be a string with at least 1 character (it cannot be empty).
+      //     `.max(255)` Specifies that the object must have a `title`
+      //     property which must be a string with a maximum length of 255 characters.
       //   - tRPC automatically validates incoming data against this schema.
       //     If the client sends invalid data (e.g., no title, or a title that isn't a string),
       //     tRPC will reject the request with an error before the mutation code even runs.
-      // The `{ message: "..." }` is the second argument to `.min()`, providing a
+      // The `{ message: "..." }` is the second argument to `.min()` and `.max()`, providing a
       // specific error message if the title fails the validation.
-      .input(z.object({ title: z.string().min(1, { message: "Task title cannot be empty." }) }))
+      .input(z.object({ title: z.string().min(1, { message: "Task title cannot be empty." }).max(255, { message: "Task title must be at most 255 characters." }) }))
 
       // - `.mutation(async ({ ctx, input }) => { ... })`: This declares the procedure as
       //   a "mutation" (a data-changing operation).

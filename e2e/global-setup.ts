@@ -119,8 +119,8 @@ async function globalSetup() {
         // ever store plain-text passwords in a database. This specific hash was generated
         // manually using a script with the `bcryptjs` library to match the exact hashing
         // algorithm that our application's backend uses for real user registrations.
-        // The password before hashing was: password123
-        password: "$2b$10$P.9yUes8yeakXlonnuE/BOYESKYQQb8Bl8rdsYCA5h9LbOVEdjafG",
+        // The password before hashing was: Password123!
+        password: "$2b$10$1ifF/NoXj9TkbBA8DZN9UOYP3Hk16PVZ0PwKrn44nMEOFKDfT5/Ny",
 
         // We are setting the `emailVerified` column to the current date and time. By seeding
         // this user as already verified, we simplify the login process for the other tests,
